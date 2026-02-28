@@ -18,36 +18,21 @@
 
 ---
 
-## DEM/API Ciktilari
+## İçindekiler
 
-Asagidaki artefaktlar OSM + Elevation API cagrilari ile uretilmistir:
-
-- `outputs/dem_api/moda_kadikoy_dem_api_map.npz`
-- `outputs/dem_api/moda_kadikoy_dem_api_map.pdf`
-- `outputs/dem_api/moda_kadikoy_dem_api_map.svg`
-- `outputs/dem_api/moda_kadikoy_elevation_3d.pdf`
-- `outputs/dem_api/moda_kadikoy_elevation_3d.png`
-- `outputs/dem_api/moda_kadikoy_terrain_4k.png`
-
-### Bilimsel Harita (SVG)
-
-![DEM API Science Map](outputs/dem_api/moda_kadikoy_dem_api_map.svg)
-
-### Yukselti 3D Plot (Python)
-
-![Elevation 3D Plot](outputs/dem_api/moda_kadikoy_elevation_3d.png)
-
-### Blender 4K 3D Render
-
-![Blender 4K Terrain Render](outputs/dem_api/moda_kadikoy_terrain_4k.png)
-
-Uretim komutlari:
-
-```bash
-python -m scripts.dem_api_map_export --place "Moda, Kadikoy, Istanbul, Turkey" --output-dir outputs/dem_api --basename moda_kadikoy_dem_api_map
-python -m scripts.elevation_3d_plot --npz outputs/dem_api/moda_kadikoy_dem_api_map.npz --png-output outputs/dem_api/moda_kadikoy_elevation_3d.png --pdf-output outputs/dem_api/moda_kadikoy_elevation_3d.pdf
-"C:\Program Files\Blender Foundation\Blender 5.0\blender.exe" -b -P scripts\blender_terrain_render.py -- --npz outputs\dem_api\moda_kadikoy_dem_api_map.npz --output outputs\dem_api\moda_kadikoy_terrain_4k.png
-```
+- [Neden MOTOMAP?](#neden-motomap)
+- [Temel Özellikler](#temel-özellikler)
+- [Teknik Mimari](#teknik-mimari)
+- [Veri Kaynakları](#veri-kaynakları)
+- [Teknoloji Yığını](#teknoloji-yığını)
+- [Kurulum](#kurulum)
+- [Hızlı Başlangıç](#hızlı-başlangıç)
+- [DEM/API Çıktıları](#demapi-çıktıları)
+- [Uygulama Planı (Implementation Plan)](#uygulama-planı-implementation-plan)
+- [Proje Durumu](#proje-durumu)
+- [Algoritma Parametreleri Özet Tablosu](#algoritma-parametreleri-özet-tablosu)
+- [Lisans](#lisans)
+- [Yazar](#yazar)
 
 ---
 
@@ -400,6 +385,33 @@ G = maliyetleri_hesapla_ve_grafa_ekle(G, motor_cc=50, surus_amaci="is_icin")
 # 3. Rota bul ve görselleştir
 rota_ciz(G, baslangic_node, bitis_node)
 # Çıktı: motomap_test_rotasi.html
+```
+
+---
+
+## DEM/API Çıktıları
+
+Aşağıdaki artefaktlar OSM + Elevation API çağrıları ile üretilmiştir:
+
+- `outputs/dem_api/moda_kadikoy_dem_api_map.npz`
+- `outputs/dem_api/moda_kadikoy_dem_api_map.pdf`
+- `outputs/dem_api/moda_kadikoy_dem_api_map.svg`
+- `outputs/dem_api/moda_kadikoy_elevation_3d.pdf`
+- `outputs/dem_api/moda_kadikoy_elevation_3d.png`
+
+### Bilimsel Harita (SVG)
+
+![DEM API Science Map](outputs/dem_api/moda_kadikoy_dem_api_map.svg)
+
+### Yükselti 3D Plot (Python)
+
+![Elevation 3D Plot](outputs/dem_api/moda_kadikoy_elevation_3d.png)
+
+Üretim komutları:
+
+```bash
+python -m scripts.dem_api_map_export --place "Moda, Kadikoy, Istanbul, Turkey" --output-dir outputs/dem_api --basename moda_kadikoy_dem_api_map
+python -m scripts.elevation_3d_plot --npz outputs/dem_api/moda_kadikoy_dem_api_map.npz --png-output outputs/dem_api/moda_kadikoy_elevation_3d.png --pdf-output outputs/dem_api/moda_kadikoy_elevation_3d.pdf
 ```
 
 ---
