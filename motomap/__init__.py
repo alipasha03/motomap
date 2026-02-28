@@ -4,6 +4,7 @@ from motomap.config import GOOGLE_MAPS_API_KEY
 from motomap.data_cleaner import clean_graph
 from motomap.data_loader import load_graph
 from motomap.elevation import add_elevation, add_grade
+from motomap.router import ucret_opsiyonlu_rota_hesapla
 
 
 def motomap_graf_olustur(place: str, api_key: str | None = None):
@@ -24,4 +25,4 @@ def motomap_graf_olustur(place: str, api_key: str | None = None):
     return graph
 
 
-__all__ = ["motomap_graf_olustur"]
+__all__ = ["motomap_graf_olustur", "ucret_opsiyonlu_rota_hesapla"]
