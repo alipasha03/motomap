@@ -47,7 +47,7 @@ Burada:
 
 | Senaryo | Şerit (Gidiş) | Araba Hızı | Motor Hızı | Açıklama |
 |:---:|:---:|:---:|:---:|:---|
-| Tek şeritli yol | 1 | 10 km/s | 15 km/s | Manevra alanı dar, sınırlı avantaj |
+| Tek şeritli yol | 1 | 10 km/s | 10 km/s | Manevra alanı dar, sınırlı avantaj |
 | Çift şeritli cadde | 2 | 10 km/s | 25 km/s | Şerit arası filtreleme mümkün |
 | Geniş bulvar / otoyol | 3+ | 5 km/s | 35 km/s | Çoklu kaçış yolu, rahat geçiş |
 
