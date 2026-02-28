@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/motomap-logo.svg" alt="MotoMap logo" width="420" />
+
 # MOTOMAP
 
 ### Motosikletçiler İçin Akıllı Rota Optimizasyon Motoru
@@ -13,6 +15,32 @@
 *bireyselleştirilmiş rotalar üretir.*
 
 </div>
+
+---
+
+## DEM/API Ciktilari
+
+Asagidaki artefaktlar OSM + Elevation API cagrilari ile uretilmistir:
+
+- `outputs/dem_api/moda_kadikoy_dem_api_map.npz`
+- `outputs/dem_api/moda_kadikoy_dem_api_map.pdf`
+- `outputs/dem_api/moda_kadikoy_dem_api_map.svg`
+- `outputs/dem_api/moda_kadikoy_terrain_4k.png`
+
+### Bilimsel Harita (SVG)
+
+![DEM API Science Map](outputs/dem_api/moda_kadikoy_dem_api_map.svg)
+
+### Blender 4K 3D Render
+
+![Blender 4K Terrain Render](outputs/dem_api/moda_kadikoy_terrain_4k.png)
+
+Uretim komutlari:
+
+```bash
+python -m scripts.dem_api_map_export --place "Moda, Kadikoy, Istanbul, Turkey" --output-dir outputs/dem_api --basename moda_kadikoy_dem_api_map
+"C:\Program Files\Blender Foundation\Blender 5.0\blender.exe" -b -P scripts\blender_terrain_render.py -- --npz outputs\dem_api\moda_kadikoy_dem_api_map.npz --output outputs\dem_api\moda_kadikoy_terrain_4k.png
+```
 
 ---
 

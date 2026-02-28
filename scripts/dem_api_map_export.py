@@ -1,11 +1,11 @@
-"""Build DEM/API-enriched map outputs and export NPZ + PDF artifacts.
+"""Build DEM/API-enriched map outputs and export NPZ + PDF/SVG artifacts.
 
 This script performs:
 1) OSM graph fetch (API/network call)
 2) Elevation fetch via Google Elevation API or Open Topo Data fallback
 3) Grade and travel-time enrichment
 4) Export of numeric arrays to .npz
-5) SciencePlots/LaTeX-rendered PDF map
+5) SciencePlots/LaTeX-rendered PDF and SVG map
 """
 
 from __future__ import annotations
@@ -122,7 +122,12 @@ def _export_npz(graph, output_path: Path, place: str) -> Path:
     return output_path
 
 
-def _plot_pdf(graph, place: str, output_path: Path) -> Path:
+def _plot_science_map(
+    graph,
+    place: str,
+    pdf_output_path: Path,
+    svg_output_path: Path,
+) -> tuple[Path, Path]:
     projected_graph = ox.project_graph(graph)
     nodes_gdf, edges_gdf = ox.graph_to_gdfs(projected_graph)
 
@@ -215,13 +220,20 @@ def _plot_pdf(graph, place: str, output_path: Path) -> Path:
         bbox={"facecolor": "white", "edgecolor": "black", "alpha": 0.85, "pad": 6},
     )
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, format="pdf", bbox_inches="tight")
+    pdf_output_path.parent.mkdir(parents=True, exist_ok=True)
+    svg_output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(pdf_output_path, format="pdf", bbox_inches="tight")
+    fig.savefig(svg_output_path, format="svg", bbox_inches="tight")
     plt.close(fig)
-    return output_path
+    return pdf_output_path, svg_output_path
 
 
-def run(place: str, output_dir: Path, api_key: str | None):
+def run(
+    place: str,
+    output_dir: Path,
+    api_key: str | None,
+    basename: str | None = None,
+):
     resolved_key = api_key if api_key is not None else GOOGLE_MAPS_API_KEY
     graph = motomap_graf_olustur(place, api_key=resolved_key)
     add_travel_time_to_graph(graph)
@@ -232,13 +244,24 @@ def run(place: str, output_dir: Path, api_key: str | None):
         .replace(" ", "_")
         .replace("/", "_")
     )
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    npz_path = output_dir / f"{safe_name}_{timestamp}.npz"
-    pdf_path = output_dir / f"{safe_name}_{timestamp}.pdf"
+    if basename:
+        stem = basename
+    else:
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        stem = f"{safe_name}_{timestamp}"
+
+    npz_path = output_dir / f"{stem}.npz"
+    pdf_path = output_dir / f"{stem}.pdf"
+    svg_path = output_dir / f"{stem}.svg"
 
     saved_npz = _export_npz(graph, npz_path, place=place)
-    saved_pdf = _plot_pdf(graph, place=place, output_path=pdf_path)
-    return saved_npz, saved_pdf
+    saved_pdf, saved_svg = _plot_science_map(
+        graph,
+        place=place,
+        pdf_output_path=pdf_path,
+        svg_output_path=svg_path,
+    )
+    return saved_npz, saved_pdf, saved_svg
 
 
 def main():
@@ -260,15 +283,22 @@ def main():
         default=None,
         help="Google Elevation API key (optional).",
     )
+    parser.add_argument(
+        "--basename",
+        default=None,
+        help="Optional fixed output basename (without extension).",
+    )
     args = parser.parse_args()
 
-    npz_path, pdf_path = run(
+    npz_path, pdf_path, svg_path = run(
         place=args.place,
         output_dir=Path(args.output_dir),
         api_key=args.api_key,
+        basename=args.basename,
     )
     print(f"NPZ saved: {npz_path}")
     print(f"PDF saved: {pdf_path}")
+    print(f"SVG saved: {svg_path}")
 
 
 if __name__ == "__main__":
