@@ -28,7 +28,7 @@ def _parse_args():
     parser.add_argument("--npz", required=True, help="Input NPZ file path")
     parser.add_argument("--output", required=True, help="Output image path (PNG)")
     parser.add_argument("--grid-size", type=int, default=220, help="Terrain grid size")
-    parser.add_argument("--z-scale", type=float, default=18.0, help="Vertical exaggeration")
+    parser.add_argument("--z-scale", type=float, default=85.0, help="Vertical exaggeration")
     return parser.parse_args(raw)
 
 
@@ -144,32 +144,42 @@ def _build_mesh(x_axis, y_axis, height, z_scale: float):
     return obj
 
 
-def _setup_material(obj):
+def _setup_material(obj, z_scale: float):
     mat = bpy.data.materials.new(name="TerrainMaterial")
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
+    nodes.clear()
 
-    bsdf = nodes.get("Principled BSDF")
-    tex_coord = nodes.new(type="ShaderNodeTexCoord")
-    mapping = nodes.new(type="ShaderNodeMapping")
-    gradient = nodes.new(type="ShaderNodeTexGradient")
+    out = nodes.new(type="ShaderNodeOutputMaterial")
+    bsdf = nodes.new(type="ShaderNodeBsdfPrincipled")
+    geom = nodes.new(type="ShaderNodeNewGeometry")
+    sep_xyz = nodes.new(type="ShaderNodeSeparateXYZ")
+    map_range = nodes.new(type="ShaderNodeMapRange")
     ramp = nodes.new(type="ShaderNodeValToRGB")
 
-    gradient.gradient_type = "LINEAR"
+    map_range.inputs["From Min"].default_value = 0.0
+    map_range.inputs["From Max"].default_value = max(1.0, z_scale)
+    map_range.inputs["To Min"].default_value = 0.0
+    map_range.inputs["To Max"].default_value = 1.0
+
     ramp.color_ramp.elements[0].position = 0.0
-    ramp.color_ramp.elements[0].color = (0.06, 0.20, 0.45, 1.0)
+    ramp.color_ramp.elements[0].color = (0.10, 0.26, 0.54, 1.0)
     ramp.color_ramp.elements[1].position = 1.0
-    ramp.color_ramp.elements[1].color = (0.95, 0.92, 0.78, 1.0)
+    ramp.color_ramp.elements[1].color = (0.95, 0.93, 0.86, 1.0)
+    mid1 = ramp.color_ramp.elements.new(0.35)
+    mid1.color = (0.15, 0.55, 0.30, 1.0)
+    mid2 = ramp.color_ramp.elements.new(0.68)
+    mid2.color = (0.48, 0.34, 0.21, 1.0)
 
-    mapping.inputs["Rotation"].default_value[1] = math.radians(90.0)
-    bsdf.inputs["Roughness"].default_value = 0.85
-    bsdf.inputs["Specular IOR Level"].default_value = 0.05
+    bsdf.inputs["Roughness"].default_value = 0.72
+    bsdf.inputs["Specular IOR Level"].default_value = 0.03
 
-    links.new(tex_coord.outputs["Object"], mapping.inputs["Vector"])
-    links.new(mapping.outputs["Vector"], gradient.inputs["Vector"])
-    links.new(gradient.outputs["Fac"], ramp.inputs["Fac"])
+    links.new(geom.outputs["Position"], sep_xyz.inputs["Vector"])
+    links.new(sep_xyz.outputs["Z"], map_range.inputs["Value"])
+    links.new(map_range.outputs["Result"], ramp.inputs["Fac"])
     links.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
+    links.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
 
     if obj.data.materials:
         obj.data.materials[0] = mat
@@ -208,9 +218,18 @@ def _setup_scene(obj, output_path: Path):
     span = max(max(xs) - min(xs), max(ys) - min(ys))
     dist = span * 1.6
 
-    cam.location = (cx - dist, cy - dist, cz + dist * 0.9)
-    cam.rotation_euler = (math.radians(58.0), 0.0, math.radians(-45.0))
+    cam.location = (cx - dist, cy - dist, cz + dist * 0.95)
     cam.data.lens = 42
+    cam.data.clip_start = 0.1
+    cam.data.clip_end = max(100000.0, dist * 20.0)
+
+    # Track camera to terrain center for robust framing.
+    bpy.ops.object.empty_add(type="PLAIN_AXES", location=(cx, cy, cz))
+    target = bpy.context.object
+    track = cam.constraints.new(type="TRACK_TO")
+    track.target = target
+    track.track_axis = "TRACK_NEGATIVE_Z"
+    track.up_axis = "UP_Y"
 
     # Sun + fill light
     bpy.ops.object.light_add(type="SUN", location=(cx + dist, cy - dist, cz + dist * 1.3))
@@ -220,7 +239,7 @@ def _setup_scene(obj, output_path: Path):
 
     bpy.ops.object.light_add(type="AREA", location=(cx - dist * 0.4, cy + dist * 0.3, cz + dist * 0.6))
     area = bpy.context.object
-    area.data.energy = 700.0
+    area.data.energy = 420.0
     area.data.size = span * 0.7
 
     if scene.world is None:
@@ -254,7 +273,7 @@ def main():
         grid_size=args.grid_size,
     )
     terrain_obj = _build_mesh(x_axis, y_axis, height, z_scale=args.z_scale)
-    _setup_material(terrain_obj)
+    _setup_material(terrain_obj, z_scale=args.z_scale)
     _setup_scene(terrain_obj, output_path=output_path)
 
     bpy.ops.render.render(write_still=True)

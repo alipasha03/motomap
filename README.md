@@ -25,11 +25,17 @@ Asagidaki artefaktlar OSM + Elevation API cagrilari ile uretilmistir:
 - `outputs/dem_api/moda_kadikoy_dem_api_map.npz`
 - `outputs/dem_api/moda_kadikoy_dem_api_map.pdf`
 - `outputs/dem_api/moda_kadikoy_dem_api_map.svg`
+- `outputs/dem_api/moda_kadikoy_elevation_3d.pdf`
+- `outputs/dem_api/moda_kadikoy_elevation_3d.png`
 - `outputs/dem_api/moda_kadikoy_terrain_4k.png`
 
 ### Bilimsel Harita (SVG)
 
 ![DEM API Science Map](outputs/dem_api/moda_kadikoy_dem_api_map.svg)
+
+### Yukselti 3D Plot (Python)
+
+![Elevation 3D Plot](outputs/dem_api/moda_kadikoy_elevation_3d.png)
 
 ### Blender 4K 3D Render
 
@@ -39,6 +45,7 @@ Uretim komutlari:
 
 ```bash
 python -m scripts.dem_api_map_export --place "Moda, Kadikoy, Istanbul, Turkey" --output-dir outputs/dem_api --basename moda_kadikoy_dem_api_map
+python -m scripts.elevation_3d_plot --npz outputs/dem_api/moda_kadikoy_dem_api_map.npz --png-output outputs/dem_api/moda_kadikoy_elevation_3d.png --pdf-output outputs/dem_api/moda_kadikoy_elevation_3d.pdf
 "C:\Program Files\Blender Foundation\Blender 5.0\blender.exe" -b -P scripts\blender_terrain_render.py -- --npz outputs\dem_api\moda_kadikoy_dem_api_map.npz --output outputs\dem_api\moda_kadikoy_terrain_4k.png
 ```
 
