@@ -1,0 +1,56 @@
+name: Bug Report
+description: Report a reproducible bug in MOTOMAP
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please provide enough detail to reproduce the issue.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Short summary
+      description: One-line description of the bug.
+      placeholder: Route output is empty for Kadikoy sample
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps, commands, and inputs.
+      placeholder: |
+        1. Run `python scripts/demo.py`
+        2. Use place = "Kadikoy, Istanbul, Turkey"
+        3. Observe error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: Graph should be created with non-zero nodes and edges.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: Error trace or incorrect output.
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Python version, OS, dependency versions.
+      placeholder: Python 3.11, Windows 11, osmnx 2.1.x
+    validations:
+      required: true

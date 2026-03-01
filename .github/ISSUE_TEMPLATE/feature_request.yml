@@ -1,0 +1,54 @@
+name: Feature Request
+description: Suggest an improvement or new capability
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to propose a clear, testable feature.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: Add turn-angle based risk weighting for scenic mode
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem does this feature solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the expected behavior and API surface.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional alternative approaches.
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Bullet list of verifiable outcomes.
+      placeholder: |
+        - [ ] New scorer added for curve intensity
+        - [ ] Unit tests cover edge cases
+        - [ ] README updated
+    validations:
+      required: true
