@@ -25,5 +25,15 @@ venv/
 # osmnx cache
 cache/
 
-# Output files
+# Node.js
+node_modules/
+
+# Output files (except website/index.html)
 *.html
+!website/index.html
+
+# Website build output
+website/dist/
+
+# Generated route data
+website/routes/

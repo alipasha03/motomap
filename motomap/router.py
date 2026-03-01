@@ -12,6 +12,25 @@ from motomap.curve_risk import add_curve_and_risk_metrics
 TRAVEL_TIME_ATTR = "travel_time_s"
 DEFAULT_SPEED_KMH = 50.0
 
+# Road type bonuses for viraj_keyfi: prefer smaller, scenic roads
+_VIRAJ_KEYFI_ROAD_BONUS = {
+    "residential": 0.15,
+    "living_street": 0.20,
+    "tertiary": 0.12,
+    "tertiary_link": 0.10,
+    "unclassified": 0.12,
+    "secondary": 0.05,
+}
+
+# Road type penalties for guvenli: penalize narrow/unpredictable roads
+_GUVENLI_ROAD_PENALTY = {
+    "residential": 0.12,
+    "living_street": 0.25,
+    "tertiary": 0.06,
+    "tertiary_link": 0.08,
+    "unclassified": 0.18,
+}
+
 
 class NoRouteFoundError(ValueError):
     """Raised when no route can be found for the selected preference."""
@@ -127,6 +146,7 @@ def _summarize_route(
     allow_toll: bool,
 ) -> dict:
     total_time = 0.0
+    real_travel_time = 0.0
     total_length = 0.0
     includes_toll = False
     fun_count = 0
@@ -143,6 +163,7 @@ def _summarize_route(
             allow_toll=allow_toll,
         )
         total_time += float(edge_data.get(weight, 0.0))
+        real_travel_time += float(edge_data.get(TRAVEL_TIME_ATTR, 0.0))
         total_length += float(edge_data.get("length", 0.0) or 0.0)
         includes_toll = includes_toll or is_toll_edge(edge_data)
         fun_count += int(edge_data.get("viraj_fun_sayisi", 0) or 0)
@@ -152,7 +173,8 @@ def _summarize_route(
 
     return {
         "nodes": nodes,
-        "toplam_sure_s": total_time,
+        "toplam_sure_s": real_travel_time,
+        "toplam_maliyet_s": total_time,
         "toplam_mesafe_m": total_length,
         "ucretli_yol_iceriyor": includes_toll,
         "viraj_fun_sayisi": fun_count,
@@ -168,6 +190,14 @@ def _mode_weight_attr(surus_modu: str) -> str:
         "viraj_keyfi": "route_cost_viraj_keyfi_s",
         "guvenli": "route_cost_guvenli_s",
     }[surus_modu]
+
+
+def _get_highway_type(data: dict) -> str:
+    """Extract highway type string from edge data."""
+    hw = data.get("highway", "")
+    if isinstance(hw, list):
+        return str(hw[0]) if hw else ""
+    return str(hw)
 
 
 def _build_mode_specific_cost(
@@ -189,20 +219,29 @@ def _build_mode_specific_cost(
         curvature_score = _safe_float(data.get("viraj_katsayisi"), default=0.0)
         high_risk = 1.0 if data.get("yuksek_risk_bolge", False) else 0.0
         grade = _safe_float(data.get("grade"), default=0.0)
+        highway = _get_highway_type(data)
 
         if surus_modu == "viraj_keyfi":
-            bonus = 1.0 + 0.35 * curvature_score + 0.07 * float(fun_count)
+            road_bonus = _VIRAJ_KEYFI_ROAD_BONUS.get(highway, 0.0)
+            bonus = (
+                1.0
+                + 0.35 * curvature_score
+                + 0.07 * float(fun_count)
+                + road_bonus
+            )
             penalty = 1.0 + 0.20 * float(danger_count) + 0.60 * high_risk
             data[weight_attr] = (base / max(1e-6, bonus)) * penalty
             continue
 
         # surus_modu == "guvenli"
+        road_penalty = _GUVENLI_ROAD_PENALTY.get(highway, 0.0)
         downhill_penalty = max(0.0, abs(min(0.0, grade)) - 0.08)
         penalty = (
             1.0
             + 0.55 * float(danger_count)
             + 1.40 * high_risk
             + 5.00 * downhill_penalty
+            + road_penalty
         )
         data[weight_attr] = base * penalty
 

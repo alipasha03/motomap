@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MOTOMAP — Rota Karşılaştırma</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏍</text></svg>" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      #sidebar {
+        width: 340px;
+        min-width: 340px;
+        background: #1a1a2e;
+        color: #eee;
+        padding: 24px 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      #sidebar h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #e94560;
+        letter-spacing: 1px;
+      }
+
+      #sidebar h1 span {
+        color: #0f3460;
+        background: #e94560;
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-right: 6px;
+      }
+
+      .section-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #888;
+        margin-bottom: 8px;
+      }
+
+      .mode-buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      .mode-btn {
+        flex: 1;
+        padding: 10px 8px;
+        border: 2px solid #333;
+        border-radius: 8px;
+        background: transparent;
+        color: #ccc;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+      }
+
+      .mode-btn:hover {
+        border-color: #e94560;
+        color: #fff;
+      }
+
+      .mode-btn.active {
+        border-color: #e94560;
+        background: #e94560;
+        color: #fff;
+      }
+
+      .legend {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+      }
+
+      .legend-line {
+        width: 32px;
+        height: 4px;
+        border-radius: 2px;
+      }
+
+      .legend-line.google {
+        background: #4285f4;
+      }
+
+      .legend-line.motomap {
+        background: #e94560;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .stat-card {
+        background: #16213e;
+        border-radius: 8px;
+        padding: 12px;
+      }
+
+      .stat-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #888;
+        margin-bottom: 4px;
+      }
+
+      .stat-value {
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .stat-value.google-color {
+        color: #4285f4;
+      }
+
+      .stat-value.motomap-color {
+        color: #e94560;
+      }
+
+      .stat-sub {
+        font-size: 11px;
+        color: #666;
+        margin-top: 2px;
+      }
+
+      .divider {
+        border: none;
+        border-top: 1px solid #333;
+      }
+
+      #loading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #888;
+        font-size: 13px;
+      }
+
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid #333;
+        border-top-color: #e94560;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      #map {
+        flex: 1;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="sidebar">
+      <h1><span>M</span>OTOMAP</h1>
+      <p style="font-size: 13px; color: #888; line-height: 1.5">
+        Google Maps rotası ile MOTOMAP motosiklet rotasının karşılaştırması
+      </p>
+
+      <hr class="divider" />
+
+      <div>
+        <div class="section-title">Sürüş Modu</div>
+        <div class="mode-buttons">
+          <button class="mode-btn active" data-mode="standart">Standart</button>
+          <button class="mode-btn" data-mode="viraj_keyfi">Viraj Keyfi</button>
+          <button class="mode-btn" data-mode="guvenli">Güvenli</button>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <div>
+        <div class="section-title">Harita Renkleri</div>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-line google"></div>
+            <span>Google Maps Rotası</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-line motomap"></div>
+            <span>MOTOMAP Rotası</span>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <div id="stats-section">
+        <div class="section-title">Google Maps (Araç)</div>
+        <div id="loading">
+          <div class="spinner"></div>
+          <span>Rota yükleniyor...</span>
+        </div>
+        <div id="google-stats" style="display: none">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Mesafe</div>
+              <div class="stat-value google-color" id="g-distance">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Tahmini Süre</div>
+              <div class="stat-value google-color" id="g-time">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <div>
+        <div class="section-title">MOTOMAP (Motosiklet)</div>
+        <div id="stats" style="display: none">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Mesafe</div>
+              <div class="stat-value motomap-color" id="mm-distance">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Tahmini Süre</div>
+              <div class="stat-value motomap-color" id="mm-time">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Eğlenceli Viraj</div>
+              <div class="stat-value" id="mm-fun" style="color: #2ecc71">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Tehlikeli Viraj</div>
+              <div class="stat-value" id="mm-danger" style="color: #e67e22">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Yüksek Risk</div>
+              <div class="stat-value" id="mm-risk" style="color: #e74c3c">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Ort. Eğim</div>
+              <div class="stat-value" id="mm-grade" style="color: #9b59b6">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: auto; font-size: 11px; color: #555">
+        MOTOMAP v1.0 — Motosiklet Rota Optimizasyonu
+      </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
