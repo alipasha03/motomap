@@ -1,0 +1,630 @@
+    TÜBİTAK 2209-A ÜNİVERSİTE ÖĞRENCİLERİ ARAŞTIRMA
+            PROJELERİ DESTEKLEME PROGRAMI
+    Başvuru formunun Arial 9 yazı tipinde, her bir konu başlığı altında verilen açıklamalar göz önünde
+       bulundurularak hazırlanması ve ekler hariç toplam 20 sayfayı geçmemesi beklenir (Alt sınır
+bulunmamaktadır). Değerlendirme araştırma önerisinin bilimsel niteliği, yöntemi, proje yönetimi ve yaygın
+                                etkisi başlıkları üzerinden yapılacaktır.
+
+
+                         ARAŞTIRMA ÖNERİSİ FORMU
+
+
+
+
+                                              2025 Yılı
+
+                                     1. Dönem Başvurusu
+  2209-A ÜNİVERSİTE ÖĞRENCİLERİ ARAŞTIRMA PROJELERİ DESTEKLEME PROGRAMI
+                         ARAŞTIRMA ÖNERİSİ FORMU
+
+ A. GENEL BİLGİLER
+
+    Başvuru Sahibinin Adı Soyadı: Ali Özuysal
+    Araştırma Önerisinin Başlığı: MOTOMAP – Motosiklet Ulaşımı İçin Trafik Yoğunluğu ve Mekânsal Risk Analizi
+    Tabanlı Optimum Rotalama
+    Danışmanın Adı Soyadı: Dr. Öğr. Üyesi Tolga Ercan
+    Araştırmanın Yürütüleceği Kurum/Kuruluş: İzmir Yüksek Teknoloji Enstitüsü
+
+
+
+ ÖZET
+
+ Araştırma önerisi özetinin (1) bilimsel nitelik; (2) yöntem; (3) proje yönetimi ve (4) yaygın etki hakkında bilgileri
+ kapsaması beklenir. Bu bölümün en son yazılması önerilir.
+
+    Özet
+
+    Bu proje, İstanbul kent içi ulaşımında motosiklet kullanıcılarına özel, güvenli ve zaman açısından optimize edilmiş
+    bir rota öneri sistemi geliştirmeyi amaçlamaktadır. İstanbul gibi büyük metropollerde artan trafik yoğunluğu ve
+    bununla ilişkili kaza oranları, özellikle fiziksel koruma düzeyi düşük olan motosiklet sürücülerini yüksek risk
+    altında bırakmaktadır. Mevcut navigasyon sistemlerinin otomobil odaklı tasarlanmış olması, motosiklet
+    sürücülerinin ihtiyaç duyduğu güvenlik bileşenlerini (yol yüzeyi durumu, tehlike noktaları, şerit genişliği, ani hız
+    düşüşleri, kaza yoğunluğu vb.) değerlendirememektedir. Bu proje, trafik yoğunluğu, yol geometrisi, şerit sayısı,
+    kaza kümelenmeleri ve motosiklete özgü hız dinamikleri gibi çok kriterli verileri bütünleştirerek, motosiklet
+    sürüşüne özel bir rota optimizasyon modeli ortaya koymayı hedeflemektedir.
+    Yöntem olarak, İstanbul Büyükşehir Belediyesi Açık Veri Portalı’ndan elde edilen trafik ve yol verileri ile
+    OpenStreetMap’ten indirilen yol ağı OSMnx, GeoPandas ve NetworkX kullanılarak birleştirilecektir. Kaza
+    verilerinin mekânsal risk dağılımı Kernel Density Estimation (KDE) ile modellenerek “risk maliyet fonksiyonu”
+    oluşturulacaktır. Ardından araç türüne özgü hız ve geçiş süresi modelleri tanımlanarak, Dijkstra ve A* tabanlı
+    rota optimizasyon algoritmaları geliştirilecektir. Üretilen rota önerileri hem simülasyon hem de gerçek zamanlı
+    veriler üzerinden test edilerek; Google Maps, Yandex Maps ve İBB CepTrafik gibi mevcut uygulamalarla
+    akademik ölçütlere dayalı karşılaştırmalar yapılacaktır.
+    Proje süreci veri toplama, ağ modeli oluşturma, algoritma geliştirme, simülasyon ve doğrulama aşamalarından
+    oluşacaktır. Çalışmanın çıktıları, Folium ve benzeri araçlarla başlangıç seviyesinde görselleştirilecektir.
+    Projenin yaygın etkisi, motosiklet sürücülerinin trafik güvenliğinin artırılması, kent içi ulaşım verimliliğinin
+    iyileştirilmesi ve akıllı şehir teknolojilerine ulusal ölçekte katkı sağlanmasıdır. Elde edilen model, belediyeler,
+    Ulaştırma Bakanlığı ve trafik güvenliği kurumları tarafından uygulanabilir nitelikte olup, Türkiye’de motosiklet
+    odaklı ilk bilimsel rota optimizasyon sisteminin geliştirilmesine öncülük edecektir.
+
+
+
+    Anahtar Kelimeler: Motosiklet Rota Optimizasyonu, Akıllı Ulaşım Sistemleri, Motosiklet Güvenliği, Trafik
+    Yoğunluğu, Risk tabanlı rotalama
+
+
+
+1. ARAŞTIRMA ÖNERİSİNİN BİLİMSEL NİTELİĞİ
+
+  1.1. Konunun Önemi ve Araştırma Önerisinin Bilimsel Niteliği
+
+   Araştırma önerisinde ele alınan konunun kapsamı, sınırları ve önemi ortaya konulur. Araştırma önerisi
+   kapsamında yapılacak çalışmalarla literatürdeki hangi eksikliğin nasıl giderileceği veya hangi soruna nasıl bir
+   çözüm getirileceği ilgili literatüre atıfla açıklanarak araştırma önerisinin bilimsel niteliği ortaya konulur. Araştırma
+   sorusu ve varsa hipotez(ler)i tanımlanır.
+   Projenin konusu, 12. Kalkınma Planı ve 2030 Sanayi ve Teknoloji Stratejisi’nde yer alan kritik teknoloji alanları ile
+   öncelikli Ar-Ge ve yenilik konuları ile ilişkili ise, ilişkilendirilme sebebi ve ilgili alana sağlayacağı yararlar
+   açıklanmalıdır.
+
+    Son yıllarda İstanbul gibi büyük metropollerde trafik yoğunluğu ve buna bağlı trafik kazaları artış göstermekte ve
+    bu durum ulaşım güvenliğini doğrudan etkilemektedir (Velioğlu, 2014). Özellikle motosiklet sürücüleri, diğer
+    motorlu araç kullanıcılarına kıyasla çok daha yüksek ölüm ve yaralanma riski taşımaktadır. Nitekim yapılan
+    bilimsel çalışmalar, motosiklet kazalarının ölüm oranının otomobil kazalarına göre beş kata kadar daha yüksek
+
+                                                                                                                              2
+ 2209-A ÜNİVERSİTE ÖĞRENCİLERİ ARAŞTIRMA PROJELERİ DESTEKLEME PROGRAMI
+                        ARAŞTIRMA ÖNERİSİ FORMU
+
+   olduğunu ortaya koymaktadır (Pincus et al., 2017). Benzer şekilde Evans’ın (2021) yaptığı kapsamlı analiz,
+   motosiklet kullanıcılarının “fiziksel koruma eksikliği” nedeniyle çarpışmalarda yapısal olarak çok daha savunmasız
+   olduğunu vurgulamaktadır. Türkiye bağlamında yapılan çalışmalar da bu bulguları desteklemekte olup, motosiklet
+   sürücülerinin yaralanma ve ölüm oranlarının otomobil sürücülerine kıyasla belirgin derecede daha yüksek olduğu
+   gösterilmiştir (Şener, Korkmaz, Yılmaz & Ordu, 2015).
+   Motosikletlerin bu yüksek riskine karşın, günümüzde yaygın olarak kullanılan navigasyon uygulamaları (Google
+   Maps, Yandex Maps vb.) otomobil odaklı tasarlanmış olup, motosiklet sürücülerinin ihtiyaç duyduğu güvenlik
+   odaklı bilgileri sağlamamaktadır. Bu uygulamalar trafik yoğunluğu, yol kapanması veya hız gibi otomobil temelli
+   parametreleri dikkate alsa da, motosikletlere özgü risk bileşenleri (örneğin yol yüzeyi bozuklukları, kaygan zemin,
+   tehlikeli dar şeritler, ani eğim değişimleri, lokal kaza kümeleri ve tehlikeli kavşak noktaları) mevcut sistemlerde yer
+   almamaktadır. Oysa literatürde hız, görünürlük, sürücü yorgunluğu ve yol koşullarının motosiklet kazalarında
+   belirleyici olduğu çok sayıda çalışmada ortaya konmuştur (Wali, Khattak & Khattak, 2018).
+   Literatür taraması sonucunda, trafik optimizasyonu ve rota planlaması üzerine çok sayıda çalışma olmasına karşın
+   bunların büyük kısmı otomobil odaklıdır. Aynı fikir ışığında büyük ve ağır araçlar için geliştirilmiş navigasyon
+   uygulamaları da yine ağır vasıta sürücülerinin rota hesaplamasında uzun yıllardır büyük fayda sağlamaktadır
+   (Zheng, Gao, Meng, Ding & Chen, 2024). Motosiklet sürücülerinin canlı trafik verileri, kazaların mekânsal dağılımı,
+   yol koşulları, güvenlik riskleri ve rota optimizasyonunu birlikte değerlendiren bütünleşik bir coğrafi bilgi sistemi
+   yaklaşımının akademik literatürde eksik olduğu görülmektedir. Örneğin BMC Public Health (2021) çalışması,
+   motosiklet kazalarında hem fiziksel hem psikolojik etkinin otomobil sürücülerine göre daha ağır olduğunu
+   raporlamış olsa da bu risklerin harita sistemlerine uyarlanmasına yönelik bir model önerilmemiştir. Bu durum,
+   alanda önemli bir boşluk bulunduğunu göstermektedir.
+   Bu proje ile motosiklet sürücülerine özel veri odaklı, güvenlik öncelikli, yapay zekâ destekli bir rota optimizasyon
+   uygulaması geliştirilmesi hedeflenmektedir. Çalışma, 12. Kalkınma Planı’nın “Akıllı Ulaşım Sistemleri”,
+   “Sürdürülebilir Şehirler” ve “Dijital Dönüşüm” temalarıyla doğrudan örtüşmekte; aynı zamanda 2030 Sanayi ve
+   Teknoloji Stratejisi'nde yer alan “Akıllı Şehir Teknolojileri”, “Veri Analitiği” ve “Yapay Zekâ Tabanlı Karar Destek
+   Sistemleri” başlıkları ile tam uyum göstermektedir. Proje tamamlandığında ülkemizin akıllı ulaşım teknolojileri
+   geliştirme kapasitesine katkı sağlayacak, motosiklet sürücülerinin güvenliği artırılacak ve şehir içi ulaşım
+   yönetimine kamu yararı sunulacaktır.
+   Araştırma sorusu: Gerçek zamanlı trafik verileri, yol, kaza durumlarının istatistikleri kullanılarak motosiklet
+   sürücüleri için verimli ve güvenli rota önerileri nasıl geliştirilebilir?
+   Hipotez: Trafik yoğunluğu ve yol koşulları gibi parametrelerin ağırlıklı olarak değerlendirildiği bir optimizasyon
+   algoritması mevcut harita uygulamalarına kıyasla motosiklet sürücüleri için daha güvenli ve daha kısa süreli rotalar
+   sunabilecektir. Bu yaklaşım, literatürde yol ağlarının coğrafi olarak haritalanmasını sağlayan çok çözünürlüklü
+   analizlerle (SMA / KDE) risk haritaları oluşturmanın mümkün olduğunu göstermektedir (Katicha et al., 2020).
+   Ayrıca, şehirlerde motosiklet kullanıcılarının şerit ve yol geometrisi ihtiyaçları üzerine yapılan çalışmalar, mevcut
+   yol altyapısının motosikletler için optimize edilmiş rota sistemleriyle daha iyi kullanılabileceğini ortaya koymaktadır
+   (Şal, Taştekin & Akdoğan, 2024). Yerel bağlamda da Coğrafi Bilgi Sistemleri (CBS) bazlı kaza analiziyle trafik
+   yoğunluğu ve yol koşullarının kazalarla ilişkisini kuran çalışmalar, parametre tabanlı rota modellemesinin bilimsel
+   ve pratik olarak uygulanabilir olduğunu göstermektedir (Geçer & Coşkun, 2025).
+
+
+
+
+1.2. Amaç ve Hedefler
+
+Araştırma önerisinin amacı ve hedefleri açık, ölçülebilir, gerçekçi ve ulaşılabilir nitelikte olacak şekilde yazılır.
+
+   Bu araştırmanın temel amacı, İstanbul kent içi ulaşımında motosiklet sürücülerine özel, güvenlik ve zaman
+   verimliliğini esas alan bir rota optimizasyon modeli geliştirmektir. Bu amaç doğrultusunda trafik yoğunluğu, yol
+   geometrisi, kaza istatistikleri ve motosiklet kullanımına özgü parametreler bütünleşik olarak değerlendirilerek,
+   mevcut otomobil odaklı navigasyon uygulamalarının eksikliklerini gideren özgün bir algoritmik altyapı
+   oluşturulacaktır. Projenin genel hedefi, motosiklet sürücülerine daha güvenli, daha hızlı ve daha sürdürülebilir
+   ulaşım seçenekleri sunan bir karar destek sistemi geliştirmektir. Bu araştırma ile hedeflediklerimiz aşağıdaki
+   şekildedir:
+        1- İstanbul Büyükşehir Belediyesi Açık Veri Portalı ve diğer kaynaklardan elde edilen yol yapısı, trafik
+             yoğunluğu, hız bilgisi, şerit sayısından oluşan veri seti oluşturulacaktır.
+        2- Bu hedef kapsamında motosiklet sürüş dinamiklerine özgü risk ve zaman parametrelerini birlikte optimize
+             eden yenilikçi bir rota belirleme algoritması geliştirilecektir. Geliştirilecek algoritmada çok kriterli
+             optimizasyon yaklaşımı kullanılacak, trafik yoğunluğu, kaza yoğunluğu, yolun fiziksel özellikleri, yol
+             yüzeyi, dönüş yarıçapları, hız profilleri ve motosiklet kullanıcılarının tipik tercihleri ağırlıklandırılarak karar
+             fonksiyonuna entegre edilecektir. Modelin performansını ölçmek için seyahat süresi ve risk düzeyi
+             indeksleri tanımlanacak ve algoritmanın otomobil odaklı navigasyon sistemlerine kıyasla en az %15
+             seyahat süresi iyileşmesi hedeflenecektir. Bu aşama, projenin bilimsel yenilik katkısının en önemli
+             bileşenlerinden birini oluşturmaktadır.
+        3- Algoritmanın çıktılarının kullanıcı tarafından erişilebilir ve yorumlanabilir olması için Folium ve benzeri
+
+                                                                                                                                   3
+ 2209-A ÜNİVERSİTE ÖĞRENCİLERİ ARAŞTIRMA PROJELERİ DESTEKLEME PROGRAMI
+                        ARAŞTIRMA ÖNERİSİ FORMU
+
+            CBS kütüphaneleri kullanılarak masaüstü ortamda bir harita tabanlı arayüz geliştirilecektir. Bu arayüz,
+            önerilen rotaları renk kodlu şekilde gösteren, risk seviyelerini sınıflandıran ve yol üzerindeki olası tehlikeli
+            kesitler hakkında uyarı üreten bir görselleştirme altyapısına sahip olacaktır. Arayüzün mobil kullanım için
+            uyarlanabilir bir prototipi de geliştirilecek ve GPS üzerinden gerçek zamanlı konum takibi sağlayan bir
+            modül entegre edilecektir. Böylece algoritma yalnızca akademik bir model değil, aynı zamanda gerçek
+            kullanıcılar tarafından deneyimlenebilecek bir uygulama prototipi haline getirilecektir. Bütün bunların
+            sonunda motosiklet kullanıcıları için daha verimli bir harita uygulaması oluşturulacak, sürüş esnasında
+            yaşanabilecek tehlikeleri durumlar önceden bildirilecek ve zamanı daha verimli kullanan yol/rota önerileri
+            sunulacaktır.
+       4-   Modelin doğruluğu, güvenilirliği ve saha gerçekliği, mevcut navigasyon uygulamalarıyla karşılaştırmalı
+            olarak değerlendirilecektir. Bu amaçla Google Haritalar, Yandex Haritalar ve İBB CepTrafik gibi ana akım
+            navigasyon sistemlerinden elde edilen rota süreleri, belirlenen güzergâhlar ve yoğunluk verileri ile
+            geliştirilen algoritmanın çıktıları karşılaştırılacaktır. Doğrulama sürecinde en az 50 farklı trafik senaryosu
+            (farklı saatler, hava koşulları, yol tipleri, kaza durumları vb.) kullanılacak ve algoritmanın kararlılığı
+            istatistiksel performans ölçütleri (RMSE, MAE, doğruluk oranı vb.) ile değerlendirilecektir. Ayrıca İstanbul
+            içerisinde belirlenecek en az 3 pilot güzergâh üzerinde saha testleri gerçekleştirilerek algoritmanın
+            gerçek trafik koşullarındaki başarımı analiz edilecektir. Bu süreç, algoritmanın bilimsel güvenilirliğini
+            somut biçimde ortaya koyacaktır.
+       5-   Projenin sonunda geliştirilmiş olan model, yalnızca bir rota öneri sistemi değil, motosiklet sürücüleri için
+            risk düzeyi analizi, yol sınıflandırması, tehlike tespiti ve kişiselleştirilebilir güzergâh seçenekleri sunan
+            bütünleşik bir karar destek sistemi işlevi görecektir. Bu sistem, sürüş güvenliğini artırmayı, olası riskleri
+            önceden öngörerek kullanıcıyı uyarmayı ve kent içi ulaşımda motosiklet kullanıcılarına daha hızlı ve
+            verimli rota seçenekleri sağlamayı amaçlamaktadır. Elde edilen sonuçlar, akıllı ulaşım teknolojileri, veri
+            bilimi ve ulaştırma mühendisliği alanlarında hem akademik hem de sektörel düzeyde kullanılabilir bir bilgi
+            birikimi oluşturacaktır. Ayrıca proje, İstanbul gibi büyük şehirlerde motosiklet güvenliğini artırmaya
+            yönelik sürdürülebilir bir çözüm sunarak kamu yararı açısından da önemli bir katma değer sağlamayı
+            hedeflemektedir.
+
+
+
+
+2. YÖNTEM
+
+Araştırmada uygulanacak yöntem ve araştırma tekniklerinin, amaç ve hedeflere ulaşmaya ne düzeyde elverişli
+olduğu ilgili literatüre atıf yapılarak ortaya konulur.
+
+Yöntem bölümünün; araştırma tasarımı, bağımlı ve bağımsız değişkenler, istatistiksel yöntemler vb. unsurları
+içermesi gerekir. Araştırma önerisinde herhangi bir ön çalışma veya fizibilite yapıldıysa bunların sunulması beklenir.
+Araştırma önerisinde sunulan yöntemlerin çalışma takvimi ile ilişkilendirilmesi gerekir.
+
+
+  Bu çalışma Coğrafi bilgi sistemleri (CBS), ağ analizi ve gerçek zamanlı trafik verilerinin bütünleşik kullanımı ile
+  yapılacaktır. Öncelikle İstanbul Büyükşehir Belediyesi’nin “İBB CepTrafik” uygulamasında kullanılan trafik verileri
+  İstanbul Büyükşehir Belediyesi’nin açık veri portalından alınacaktır. Akabinde trafik yoğunluğu, şerit sayısı, kaza
+  verileri ve yol geometrisi gibi ham verileri alınarak Python tabanlı OSMnx ve GeoPandas kütüphaneleri kullanılarak
+  harita oluşturulacaktır. GeoPandas kütüphanesi ile aldığımız verileri coğrafi koordinat sistemine dönüştürülecek,
+  OSMnx kullanılarak oluşturulan İstanbul yol ağı ile birleştirilecektir. Daha sonra elimizdeki çıktı üzerinden “yolların
+  şerit sayısı”, “ortalama hız”, “trafik yoğunluk katsayısı” ve “kaza vb. oluşturabilecek tehlikeli durumlar” gibi özellikler
+  eklenecektir. Sonraki aşamada oluşturduğumuz yol ağı yapısı NetworkX kütüphanesi ile analiz edilerek, farklı taşıt
+  tipleri için rotaları hesaplayacaktır. Bu hesaplamaların sonucunda motosikletler ve otomobiller için farklı maliyet
+  fonksiyonları çıkacaktır. Bu fonksiyonlar sayesinde motosiklet sürücülerinin kullanımına en uygun, en güvenli ve
+  en kısa süreli yollar belirlenecektir. Rota hesaplamalarında bazı algoritmalar kullanılacak ve otomobillere ve
+  motosikletlere uygun iki ayrı rota üretilecektir. Bu çıkan yollar Folium ve OSMnx.routing modülleri kullanılarak
+  etkileşimli bir harita üzerinde gösterilecektir.
+       1) Temel Yol Ağı Oluşturma: Pilot bölge olan İstanbul için temel karayolu ağı, OpenStreetMap (OSM) veri
+              tabanından Python altyapılı “osmnx” kütüphanesi kullanılarak bir networkx Graf(G) olarak indirilecektir.
+              Bu Graf, her yol segmenti için uzunluk, şerit sayısı ve yol tipi gibi özellikleri inceleyecektir
+              İlk aşamada İstanbul Büyükşehir Belediyesi Açık Veri Portalı'ndan alınan:
+                             Trafik yoğunluğu (metin tabanlı veya sensör verisi)
+                             Şerit sayısı ve yol geometrisi
+                             Kaza verileri (konum–zaman–tehlike seviyesi)
+              Ham veri olarak toplanacaktır. Bu veriler GeoPandas kullanılarak coğrafi koordinat sistemine
+              dönüştürülecek ve OpenStreetMap verisinden OSMnx aracılığıyla indirilen yol ağı ile uzaysal join (spatial
+              join) yöntemiyle bütünleştirilecektir.
+
+                                                                                                                                4
+2209-A ÜNİVERSİTE ÖĞRENCİLERİ ARAŞTIRMA PROJELERİ DESTEKLEME PROGRAMI
+                       ARAŞTIRMA ÖNERİSİ FORMU
+
+           CBS literatürü, trafik yoğunluğu ve yol risk haritalarının çok kriterli karar modelleriyle birleştirilmesinin
+           sürücü güvenliğini artırdığını göstermektedir (Zhang et al., 2021; Liu & Wang, 2020).
+           .
+     2)    Yol Ağı (Graph) Oluşturma ve Bağımlı – Bağımsız Değişkenler: İstanbul yol ağı, OSMnx kullanılarak
+           directed multigraph (MultiDİGraph) olarak indirilecek ve NetworkX formatına dönüştürülecektir.Her bir
+           kenara atanacak değişkenler aşağıdaki gibidir:
+                   Bağımsız Değişkenler
+                          Mesafe
+                          Yolun şerit sayısı
+                          Simüle edilen veya gerçek trafik yoğunluğu
+                          Kaza yoğunluğu (Kernel density estimation metodu ile oluşturulacak bölgeler)
+                          Yol tipi (arter, cadde, sokak)
+
+                 Bağımlı Değişkenler
+                        Araba_süresi fonksiyonu
+                        Motosiklet_süresi fonksiyonu
+       Buradaki bağımlı değişkenler kullanılarak modelin çıktı değeri oluşturulacak ve rota maliyet fonksiyonları
+ bu değerlere göre optimize edilecektir.
+
+     3)    Trafik Simülasyonu (Akıllı Simülasyon): Eğer gerçek zamanlı API’lere erişim sorunları oluşacaksa
+           (Risk Yönetimi kısmında detaylı bahsedilmiştir.) bir B planı olarak “Akıllı Simülasyon” ile çözülecektir.
+           Günün farklı saatlerine göre değişen farklı trafik yoğunlukları için zamansal trafik profilleri
+           oluşturulacaktır. Oluşturulan bu trafik profillerine göre, ana arterler için varsayılan bir “araba_hızı”
+           atanarak Graf üzerindeki “anlık” trafik durumu simüle edilecektir. Simülasyon tasarımında:
+                    Yoğunluk kategorileri (“yavaş”, “orta”, “az yoğun”)
+                    Ana arterlerde zaman – hız ilişkileri
+                    Gün içinde 24 saatlik hız varyasyonları
+                Kullanılarak her yol segmentine simüle edilmiş bir hız değeri atanacaktır. Simüle Edilmiş Geçiş
+                Süreleri: Motosikletler için literatürde kullanılan “lane filtering advantage” modeli uygulanacaktır
+                (Bachmann, 2018): Bu motosiklet sürücülerinin düşük hızlı ortamlarda daha hızlı ilerleyebilmesini
+                modellemektedir. Bu yaklaşım, "şerit filtreleme"nin akademik bir araştırma konusu olduğunu ve
+                sürücü davranışı üzerinde etkili olduğunu gösteren çalışmalarla da desteklenmektedir (Allen vd.,
+                2018).
+          Simüle Edilmiş Geçiş Süreleri:
+                                                                     𝑚𝑒𝑠𝑎𝑓𝑒
+                                             𝑎𝑟𝑎𝑏𝑎_𝑠ü𝑟𝑒𝑠𝑖 = 𝑠𝑖𝑚ü𝑙𝑒_𝑎𝑟𝑎𝑏𝑎_ℎ𝚤𝑧𝚤
+          Motosikletler için literatürde kullanılan “lane filtering advantage” modeli uygulanacaktır (Bachmann, 2018):
+                       motosiklet_hızı = 30 km/s, eğer araba_hızı < 20 km/s ve şerit_sayısı >=2
+                       motosiklet_hızı = araba_hızı + ∆v, diğer durumlar
+
+          Bu motosiklet sürücülerinin düşük hızlı ortamlarda daha hızlı ilerleyebilmesini modellemektedir.
+
+     4)    Algoritmik Rota Hesaplaması ve Analizi: Belirlenen başlangıç (A noktası) ve bitiş (B noktası) arasında
+           en düşük geçiş süresine sahip rotayı (shortest path) bulmak için “networkx” Python kütüphanesinin
+           “Dijkstra” veya “A*(A-Star))” algoritması kullanılacaktır (Dijkstra, 1959). Bu algoritmalar sayesinde diğer
+           haritalar gibi mesafe yerine bizim tanımladığımız geçiş süresi paratmetresini minimize etmeye
+           çalışılacaktır.
+                           Araba rotası: networkx.shortest_path(G, A, B, weight =’araba_süresi’
+                           Motosiklet rotası: networkx.shortest_path(G, A, B, weight=’motosiklet_süresi’
+                            Bu yaklaşım, literatürde “travel-time-based routing” yöntemleriyle uyumludur (Narang et
+                            al.,2019) ve özellikle OSM verisi üzerinden dinamik rota planlaması için etkin bir yöntem
+                            olduğu gösterilmiştir (Eisner vd., 2012). Dijkstra Algoritması: Ağırlıklı en kısa yol
+                            problemleri için en güvenilir yöntemdir (Dijkstra, 1959). A*(A-Star) Algoritması: Heuristik
+                            fonksiyonlarla daha hızlı çalışabildiği için yüksek trafik verisi içeren büyük ağlarda tercih
+                            edilir.
+     5)    Analitik Karşılaştırma ve İstatiksel Ölçümleme: Hesaplanan iki rota araba ve motosiklet için aşağıdaki
+           metrikler ile karşılaştırılacaktır:
+                    Toplam süre
+                    Toplam mesafe
+                    Yoğunluk seviyelerine göre rota farkı
+                    Risk puanları (kaza ve sürücüleri etkileyebilecek tehlikeli durumların yoğunluğuna göre)
+                     Ek olarak:
+
+                İstatiksel Yöntemler:
+                            Ortalama hız karşılaştırması  paired t-test
+
+
+                                                                                                                            5
+2209-A ÜNİVERSİTE ÖĞRENCİLERİ ARAŞTIRMA PROJELERİ DESTEKLEME PROGRAMI
+                       ARAŞTIRMA ÖNERİSİ FORMU
+
+                           Rota güvenlik farkı  risk index normalization
+                           Yoğunluk  süre korelasyonu  Pearson korelasyon analizi
+
+    6)   Görselleştirme ve Arayüz Tasarımı:
+                Folium ile interaktif harita
+                OSMnx.routing ile çizilen rotalar
+                Başlangıç-bitiş marker’ları
+                Renk kodlu yoğunluk çizimleri
+            İle sunulacaktır.
+
+    7)   Araştırma Tasarımının Amaca Uygunluğu
+         Yukarıdaki yöntemler:
+              Motosiklet sürücülerine özgü rota optimizasyonu
+              Şerit sayısı bazlı hız modellemesi
+              Kaza yoğunluğuna göre risk haritaları
+              CBS tabanlı trafik analizi
+             Gibi literatürde eksik kalan alanları tamamladığı için araştırma hedefleriyle tam uyumludur.
+
+
+
+
+                                                                                                            6
+   2209/A ÜNİVERSİTE ÖĞRENCİLERİ ARAŞTIRMA PROJELERİ DESTEĞİ PROGRAMI
+                         ARAŞTIRMA ÖNERİSİ FORMU
+
+3. PROJE YÖNETİMİ
+
+    3.1 Çalışma Takvimi
+
+    Araştırmada yer alacak başlıca faaliyetler, her bir faaliyetin hangi sürede gerçekleştirileceği, başarı ölçütü ve
+    araştırmanın başarısına katkısı “Çalışma Takvimi” doldurularak sunulur.
+
+                                             ÇALIŞMA TAKVİMİ (*)
+
+                                                                                          Başarı Ölçütü ve
+                                                           Kim(ler) Tarafından
+          Tarih Aralığı            Faaliyetler**                                       Araştırmanın Başarısına
+                                                           Gerçekleştirileceği
+                                                                                              Katkısı***
+                              İBB Açık Veri
+                              Portalından trafik
+                              yoğunluğu, şerit
+                              sayısı, hız, kaza ve
+                              yol geometrisi
+      01/02/2026-                                                                      Verilerin eksiksiz alınması
+                              verilerinin                      Araştırmacı
+      01/04/2026                                                                        ve temizlenmesi (%20)
+                              toplanması; veri
+                              temizleme,
+                              standardizasyon ve
+                              koordinat
+                              dönüşümleri
+                              OSMnx ile İstanbul
+                              yol ağının
+                              çıkarılması;
+                              GeoPandas ile                                                  Yol ağının tam
+      01/04/2026-                                                                         entegrasyonu ve veri
+                              verilerin yol ağına              Araştırmacı
+      01/06/2026                                                                        tutarlılığının sağlanması
+                              entegrasyonu; eksik
+                              veri noktaları için                                                  (%20)
+                              KDE analizlerinin
+                              yapılması
+                              Trafik yoğunluğu,
+                              şerit sayısı ve hız
+                              profilinin graf üzerine
+      01/06/2026-             eklenmesi;                                                Zenginleştirilmiş grafın
+                                                               Araştırmacı
+      01/08/2026              araba_süresi ve                                          çalışır hale gelmesi (%15)
+                              motosiklet_süresi
+                              fonksiyonlarının
+                              oluşturulması
+                              Dijkstra ve A*
+                              algoritmalarıyla rota
+                              optimizasyonunun
+                              geliştirilmesi;
+      01/08/2026-             motosiklet ve                                             Algoritmaların başarıyla
+                                                               Araştırmacı                çalışması ve doğru
+      01/09/2026              otomobil için ayrı
+                              maliyet                                                  rotaların üretilmesi (%20)
+                              fonksiyonlarıyla
+                              rotaların
+                              hesaplanması
+                              Hesaplanan rotaların
+                              süre ve mesafe
+                              bazında
+                              karşılaştırılması;
+                                                                                      Haritaların oluşturulması ve
+      01/09/2026-             Folium ile etkileşimli
+                                                               Araştırmacı              güvenli rota çıktılarının
+      01/11/2026              haritaların
+                                                                                            üretilmesi (%15)
+                              oluşturulması;
+                              güvenli rota
+                              analizlerinin
+                              yapılması
+                              Sonuçların
+                              değerlendirilmesi,
+      01/11/2026-                                                                           Nihai raporun
+                              projenin                         Araştırmacı
+      31/01/2027                                                                         tamamlanması (%10)
+                              raporlanması ve
+                              çıktıların derlenmesi
+
+
+                                                                                                                        7
+2209/A ÜNİVERSİTE ÖĞRENCİLERİ ARAŞTIRMA PROJELERİ DESTEĞİ PROGRAMI
+                      ARAŞTIRMA ÖNERİSİ FORMU
+
+
+  (*) Çizelgedeki satırlar ve sütunlar gerektiği kadar genişletilebilir ve çoğaltılabilir.
+  (**) Literatür taraması, sonuç raporu hazırlama aşamaları, araştırma sonuçlarının paylaşımı, ve malzeme alımı ayrı
+  birer iş adımı olarak gösterilmemelidir.
+  (***) Başarı ölçütü, ölçülebilir ve izlenebilir nitelikte olacak şekilde nicel veya nitel ölçütlerle (ifade, sayı, yüzde, vb.)
+  belirtilir. Bu sütundaki değerlerin toplamı 100 olmalıdır.
+
+
+3.2 Risk Yönetimi
+
+Araştırmanın başarısını olumsuz yönde etkileyebilecek riskler ve bu risklerle karşılaşıldığında araştırmanın
+başarıyla yürütülmesini sağlamak için alınacak tedbirler (B Planı) aşağıdaki Risk Yönetimi Tablosu’nda ifade
+edilir. B Plan(lar)ının uygulanması araştırmanın temel hedeflerinden sapmaya yol açmamalıdır. B Plan(lar)ına
+geçilmesi durumunda yöntem değişikliğine gidiliyor ise bu durum detaylandırılmalıdır.
+
+                                                 RİSK YÖNETİMİ TABLOSU*
+
+                  En Önemli Riskler                                          Alınacak Tedbirler (B Planı)
+ 1. İstanbul Büyükşehir Belediyesi Açık Veri                  Akıllı Simülasyon yaklaşımı devreye alınacaktır.
+ Portalı’ndan gerçek zamanlı trafik API                       Trafik yoğunluğu, hız ve tıkanıklık derecesi gibi
+ verilerine erişilememesi (erişim kısıtlaması,                veriler için günün farklı zaman dilimlerine yönelik
+ API kota limiti, geçici servis dışı olması)                  zamansal trafik profilleri oluşturulacak, her yol
+                                                              segmentine bu profil doğrultusunda tahmini hızlar
+                                                              atanacaktır. Böylece gerçek zamanlı veri
+                                                              sağlanamasa bile rota optimizasyon algoritması
+                                                              çalışmaya devam edecektir.
+ 2. Trafik API çıktılarının formatının değişmesi              Veri ön işleme aşamasında esnek bir veri temizleme
+ veya veri setlerinde eksiklikler olması                      ve dönüştürme pipeline’ı kullanılacaktır. Eksik trafik
+                                                              yoğunluk değerleri için interpolasyon, kaza
+                                                              verilerindeki boşluklar için kernel density estimation
+                                                              (KDE) tabanlı risk tahmini kullanılacaktır.
+
+ 3. OSM verilerinin bazı bölgelerde güncel                    OSMnx tabanlı yol ağı, ek olarak İBB yol kapama
+ olmaması (şerit sayısı, yol çalışmaları, kapalı              duyuruları ve OpenStreetMap topluluk
+ yollar)                                                      güncellemeleriyle senkronize edilerek düzenli olarak
+                                                              güncellenecektir. Belirli yol segmentleri için şerit
+                                                              sayısı eksikse, trafik yoğunluğu–yol tipi ilişkisinden
+                                                              istatistiksel tahmin yapılacaktır.
+ 4. Folium ve OSMnx görselleştirme                            Çıktılar HTML olarak kaydedilecek ve farklı
+ modüllerinin bazı tarayıcılarda hatalı çalışması             tarayıcılarda test edilecektir. Sorun oluşması halinde
+                                                              Mapbox/Leaflet tabanlı yedek görselleştirme
+                                                              şablonu kullanılacaktır.
+
+
+ 5. NetworkX rota hesaplama algoritmalarının                  Öncelikle sadece pilot bölge için grafın alt ağ
+ büyük grafikte yavaşlaması (özellikle İstanbul               (subgraph) yapısı çıkarılacak, böylece düğüm ve
+ ağı)                                                         kenar sayısı azaltılacaktır. Ek olarak Dijkstra yerine
+                                                              A* algoritması kullanılacak, gerekli görülürse
+                                                              “bidirectional Dijkstra” veya “hierarchical routing”
+                                                              yöntemleri uygulanacaktır.
+ 6. Kaza verilerinde tutarsızlık veya eksiklik                Kaza noktaları KDE (Kernel Density) ile yoğunluk
+ (özellikle konum hataları)                                   alanlarına dönüştürülerek yerel hatalar minimize
+                                                              edilecektir. Ayrıca güvenlik puanları segment bazlı
+                                                              “risk zonu” yaklaşımı ile hesaplanacak ve tek bir
+                                                              nokta verisine bağımlı olunmayacaktır.
+ 7. Python kütüphaneleri arasında uyumsuzluk                  Çalışma başlamadan önce sabit sanal ortam (virtual
+ veya hatalı paket sürümü                                     environment) oluşturulacak ve tüm paket sürümleri
+                                                              dondurulacaktır (requirements.txt). Bağımlılık hatası
+                                                              durumunda alternatif sürüm ve mirror paket depoları
+                                                              kullanılacaktır.
+(*) Tablodaki satırlar gerektiği kadar genişletilebilir ve çoğaltılabilir.
+
+
+
+
+                                                                                                                                   8
+      2209/A ÜNİVERSİTE ÖĞRENCİLERİ ARAŞTIRMA PROJELERİ DESTEĞİ PROGRAMI
+                            ARAŞTIRMA ÖNERİSİ FORMU
+
+      3.3.Araştırma Olanakları
+     Bu bölümde projenin yürütüleceği kurum ve kuruluşlarda var olan ve projede kullanılacak olan altyapı/ekipman
+     (laboratuvar, araç, makine-teçhizat, vb.) olanakları belirtilir.
+
+                                             ARAŞTIRMA OLANAKLARI TABLOSU (*)
+
+           Kuruluşta Bulunan Altyapı/Ekipman Türü,
+                               Modeli                                                      Projede Kullanım Amacı
+              (Laboratuvar, Araç, Makine-Teçhizat, vb.)
+        İzmir Yüksek Teknoloji Enstitüsü Mühendislik
+                                                                            Algoritmanın ve programın çıktılarının test
+        Fakültesi Bilgisayar Laboratuvarı – Yüksek GPU ve
+                                                                            edilmesi
+        CPU başarımlı bilgisayar altyapısı
+
+
+      (*) Tablodaki satırlar gerektiği kadar genişletilebilir ve çoğaltılabilir.
+
+4.    ARAŞTIRMA ÖNERİSİNİN YAYGIN ETKİSİ
+
+Araştırma önerisi kapsamındaki çalışmadan elde edilmesi öngörülen çıktılar amaçlarına göre belirlenen
+kategorilere ayrılarak belirtilir; ölçülebilir ve gerçekçi hedeflere dayandırılır.
+
+
+     Çıktı, Etki ve Kazanımlar                                       Öngörülen Çıktı(lar), Etki(ler) ve Kazanım(lar)
+
+                                                                                  (Ulusal/Uluslararası Yeni Proje vb.)
+                                                                                  Proje tamamlandığında, osmnx ve networkx
+                                                                                   kütüphanelerinin "Akıllı Simülasyon" (tarihsel
+                                                                                   trafik profili) ile nasıl entegre edildiğini,
+                                                                                   geliştirilen motosiklet_suresi adlı özel maliyet
+                                                                                   fonksiyonunun metodolojisini ve ön çalışmada
+                                                                                   elde edilen nicel sonuçları (%13 zaman
+                                                                                   kazancı) detaylandıran TÜBİTAK 2209-A Proje
+                                                                                   Sonuç Raporu'nun hazırlanması.
+                                                                                  "Şerit Filtreleme" (Lane Filtering) avantajının
+                                                                                   networkx graf analizi ile modellenmesine
+                                                                                   yönelik bu yenilikçi yaklaşımın ve simülasyon
+                                                                                   çıktılarının (image_0b9504.jpg), Ulaşım
+     Bilimsel/Akademik Çıktılar                                                    Mühendisliği, Coğrafi Bilgi Sistemleri (CBS)
+     (Ulusal/Uluslararası Makale, Kitap Bölümü, Kitap,
+     Bildiri vb.)
+                                                                                   veya Akıllı Şehirler temalı ulusal bir öğrenci
+                                                                                   kongresinde (örn: AUS Konferansı) bildiri
+                                                                                   olarak sunulması.
+                                                                                  OpenStreetMap (OSM) verisinin, "şerit
+                                                                                   filtreleme" gibi spesifik bir kentsel mobilite
+                                                                                   sorununu modellemek için nasıl
+                                                                                   zenginleştirilebileceğini (Graph Feature
+                                                                                   Engineering) ve özel maliyet fonksiyonları ile
+                                                                                   nasıl analiz edilebileceğini gösteren bir teknik
+                                                                                   vaka analizi (case study) makalesi
+                                                                                   hazırlanarak, ulusal hakemli bir mühendislik
+                                                                                   dergisine (örn: TR Dizin kapsamındaki)
+                                                                                   sunulmak üzere taslak oluşturulması.
+
+                                                                                  (Ürün, Prototip, Patent, Faydalı Model, Tescil,
+                                                                                   Görsel/İşitsel Arşiv, Envanter/Veri Tabanı,
+                                                                                   Çalıştay, Eğitim, Bilimsel Etkinlik vb. )
+                                                                                  Prototip (En Önemli Çıktı): Python (osmnx,
+                                                                                   networkx) tabanlı, "Akıllı Simülasyon" (tarihsel
+     Ekonomik/Ticari/Sosyal Çıktılar                                               trafik profili) ile çalışan ve motosikletler için
+     (Ürün, Prototip, Patent, Faydalı Model, Tescil,
+                                                                                   "şerit filtreleme" avantajını hesaplayabilen bir
+     Görsel/İşitsel Arşiv, Envanter/Veri Tabanı, Çalıştay,
+     Eğitim, Bilimsel Etkinlik vb. )
+                                                                                   rota optimizasyon motorunun (navigasyon
+                                                                                   beyni) çalışan prototipi.
+                                                                                  Sosyal Etki: Özellikle kurye ve moto-teslimat
+                                                                                   sektöründe çalışan sürücülerin teslimat
+                                                                                   sürelerini kısaltarak kentsel lojistiğin
+                                                                                   verimliliğine doğrudan katkı sağlanması.
+
+
+                                                                                                                                       9
+    2209/A ÜNİVERSİTE ÖĞRENCİLERİ ARAŞTIRMA PROJELERİ DESTEĞİ PROGRAMI
+                          ARAŞTIRMA ÖNERİSİ FORMU
+
+                                                                 Ekonomik Etki: Daha verimli rotalar sayesinde
+                                                                  motosikletli işletmelerin yakıt tüketimini ve
+                                                                  operasyonel maliyetlerini düşürme potansiyeli.
+                                                                 Veri Tabanı: İstanbul pilot bölgesi (Kadıköy)
+                                                                  için, günün farklı saatlerine göre optimize
+                                                                  edilmiş "motosiklet rotaları" ve bu rotaların
+                                                                  "araba rotaları" ile karşılaştırmasını içeren bir
+                                                                  analiz envanteri oluşturulması.
+
+                                                                 (Ulusal/Uluslararası Yeni Proje vb.)
+                                                                 Bu projenin (2209-A) prototipi ve başarılı
+                                                                  fizibilite sonuçları, ticari potansiyeli yüksek bir
+                                                                  mobil uygulamaya dönüştürülmesi amacıyla
+                                                                  TÜBİTAK 1512 (BİGG) Girişimcilik Destek
+                                                                  Programı'na başvuru yapmak için güçlü bir
+  Yeni Proje(ler) Oluşturmasına Yönelik                           temel ve "Kavram Kanıtlama" (Proof of
+  Çıktılar                                                        Concept) çıktısı oluşturacaktır.
+  (Ulusal/Uluslararası Yeni Proje vb.)                           Geliştirilen "Akıllı Simülasyon" (Plan B)
+                                                                  motorunun, gelecekte İBB gibi yerel API'lerden
+                                                                  (Plan A) gerçek zamanlı veri alacak şekilde
+                                                                  geliştirilmesi için yeni bir Ar-Ge projesine (örn:
+                                                                  KOSGEB Ar-Ge İnovasyon) zemin
+                                                                  hazırlanması.
+
+
+
+
+5. BELİRTMEK İSTEDİĞİNİZ DİĞER KONULAR
+Sadece araştırma önerisinin değerlendirilmesine katkı sağlayabilecek bilgi/veri (grafik, tablo, vb.) eklenebilir.
+
+
+
+
+                                                                                                                        10
+2209/A ÜNİVERSİTE ÖĞRENCİLERİ ARAŞTIRMA PROJELERİ DESTEĞİ PROGRAMI
+                      ARAŞTIRMA ÖNERİSİ FORMU
+
+
+
+
+                                                                     11
+   2209/A ÜNİVERSİTE ÖĞRENCİLERİ ARAŞTIRMA PROJELERİ DESTEĞİ PROGRAMI
+                         ARAŞTIRMA ÖNERİSİ FORMU
+
+6. EKLER
+
+  EK-1: KAYNAKLAR
+     1. Allen, T., et al. (2018). Motorcycle lane filtering: A review of the evidence. Journal of Safety Research.
+     2. BMC Public Health. (2021). Health outcomes of motorcyclists vs. other road users.
+     3. Dijkstra, E. W. (1959). A note on two problems in connexion with graphs. Numerische Mathematik,
+         1(1), 269–271.
+     4. Eisner, R., Funke, S., & Storandt, S. (2012). Efficient and dynamic route planning with OSM.
+         Proceedings of the 20th International Conference on Advances in Geographic Information Systems
+         (GIS).
+     5. Evans, L. (2021). Death and Injury in Motorcycle Accidents: Utilisation of Technology to Reduce Risk.
+         Journal of Road Safety.
+     6. Geçer, A., & Coşkun, E. (2025). Trafik kazalarının iş zekâsı aracı ile analizi: Sakarya ili örneği. Trafik
+         ve Ulaşım Araştırmaları Dergisi, 7(2), 112–128.
+     7. Katicha, S., Khoury, J., & Flintsch, G. (2020). A spatial multiresolution analysis approach to identify
+         crash hotspots and estimate crash risk. arXiv:2003.06378.
+     8. Pincus, D., et al. (2017). Motorcycle crashes cause 5 times as many deaths as car accidents. CMAJ.
+     9. PubMed. (2019). Motorcyclist injury risk as a function of real-life crash speed.
+     10. Şal, B., Taştekin, E., & Akdoğan, B. (2024). Türkiye’de motosiklet şeridi gerekliliği ve tasarım önerisi.
+         Aksaray Üniversitesi Fen Bilimleri Dergisi, 8(1), 45–56.
+     11. Şener, N., Korkmaz, M., Yılmaz, M., & Ordu, S. (2015). Musculoskeletal Injuries in Motorcycle
+         Accidents. Medical Bulletin of Haseki, 53(1), 24–29. https://doi.org/10.4274/haseki.2019
+     12. Velioğlu, A. (2014). A Multifaceted Relationship between Congestion and Accidents on Highways:
+         Evidence from D-100 Highway in Istanbul. Sabancı Üniversitesi Yüksek Lisans Tezi.
+     13. Zheng, L., Gao, T., Meng, L., Ding, T., & Chen, W. (2024). Research on the Route Choice Behavior of
+         Urban       Freight    Vehicles    Based        on     GPS       Data.    Mathematics,     12(2),    291.
+         https://doi.org/10.3390/math12020291
+     14. Wali, B., Khattak, A., & Khattak, Z. (2018). Case-Control Analysis of Motorcyclist Injury Crashes.
+
+
+
+
+                                                                                                                     12
+

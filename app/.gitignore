@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+.venv/
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+.claude/
+
+# pytest
+.pytest_cache/
+
+# osmnx cache
+cache/
+
+# Node.js
+node_modules/
+
+# Output files (except website/index.html)
+*.html
+!website/index.html
+
+# Website build output
+website/dist/
+
+# Generated route data
+website/routes/

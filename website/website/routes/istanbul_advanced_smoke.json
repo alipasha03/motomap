@@ -1,0 +1,121 @@
+{
+  "generated_at": "2026-03-02T22:10:38.292912+00:00",
+  "started_at": "2026-03-02T22:00:35.422467+00:00",
+  "mode": "istanbul_advanced_calibration",
+  "objective": {
+    "formula": "failure_weight * failure_ratio + time_mismatch_weight * avg_abs(1 - std_time_ratio_vs_baseline) + distance_mismatch_weight * avg_abs(1 - std_distance_ratio_vs_baseline)",
+    "weights": {
+      "failure_weight": 100.0,
+      "time_mismatch_weight": 12.0,
+      "distance_mismatch_weight": 10.0
+    },
+    "missing_ratio_penalty": 1.0,
+    "failed_run_penalty": 1000.0
+  },
+  "evaluation_config": {
+    "evaluation_script": "C:\\Users\\lenovo\\Desktop\\motomap\\website\\evaluate_with_google.py",
+    "batch": 1,
+    "pairs_file": null,
+    "place": "Istanbul, Turkey",
+    "seed": 42,
+    "min_distance_m": 1000.0,
+    "max_distance_m": 10000.0,
+    "backend": "valhalla",
+    "valhalla_url": "https://valhalla1.openstreetmap.de",
+    "timeout_s": 600.0
+  },
+  "candidate_grid": {
+    "speed_factors": [
+      0.5
+    ],
+    "segment_delays_s": [
+      2.0
+    ],
+    "count": 1
+  },
+  "successful_candidates": 0,
+  "best_candidate": {
+    "candidate_index": 1,
+    "speed_factor": 0.5,
+    "segment_delay_s": 2.0,
+    "status": "timeout",
+    "objective_score": 1000.0,
+    "objective_breakdown": {
+      "failure_component": null,
+      "time_mismatch_component": null,
+      "distance_mismatch_component": null,
+      "failed_run_penalty": 1000.0
+    },
+    "duration_s": 602.669,
+    "subprocess_return_code": null,
+    "command": [
+      "C:\\Users\\lenovo\\miniconda3\\python.exe",
+      "C:\\Users\\lenovo\\Desktop\\motomap\\website\\evaluate_with_google.py",
+      "--skip-single",
+      "--batch",
+      "1",
+      "--place",
+      "Istanbul, Turkey",
+      "--seed",
+      "42",
+      "--min-distance-m",
+      "1000.0",
+      "--max-distance-m",
+      "10000.0",
+      "--backend",
+      "valhalla",
+      "--valhalla-url",
+      "https://valhalla1.openstreetmap.de",
+      "--output-json",
+      "C:\\Users\\lenovo\\Desktop\\motomap\\website\\motomap_istanbul_calibration_j8mkb9fj\\c001_sf_0p50000_sd_2p00000.json"
+    ],
+    "aggregate": null,
+    "error": "Timed out after 600.0 seconds.",
+    "stdout_tail": "",
+    "stderr_tail": "",
+    "evaluation_json_path": null
+  },
+  "results": [
+    {
+      "candidate_index": 1,
+      "speed_factor": 0.5,
+      "segment_delay_s": 2.0,
+      "status": "timeout",
+      "objective_score": 1000.0,
+      "objective_breakdown": {
+        "failure_component": null,
+        "time_mismatch_component": null,
+        "distance_mismatch_component": null,
+        "failed_run_penalty": 1000.0
+      },
+      "duration_s": 602.669,
+      "subprocess_return_code": null,
+      "command": [
+        "C:\\Users\\lenovo\\miniconda3\\python.exe",
+        "C:\\Users\\lenovo\\Desktop\\motomap\\website\\evaluate_with_google.py",
+        "--skip-single",
+        "--batch",
+        "1",
+        "--place",
+        "Istanbul, Turkey",
+        "--seed",
+        "42",
+        "--min-distance-m",
+        "1000.0",
+        "--max-distance-m",
+        "10000.0",
+        "--backend",
+        "valhalla",
+        "--valhalla-url",
+        "https://valhalla1.openstreetmap.de",
+        "--output-json",
+        "C:\\Users\\lenovo\\Desktop\\motomap\\website\\motomap_istanbul_calibration_j8mkb9fj\\c001_sf_0p50000_sd_2p00000.json"
+      ],
+      "aggregate": null,
+      "error": "Timed out after 600.0 seconds.",
+      "stdout_tail": "",
+      "stderr_tail": "",
+      "evaluation_json_path": null
+    }
+  ]
+}

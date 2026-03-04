@@ -1,0 +1,33 @@
+<svg width="760" height="220" viewBox="0 0 760 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pinGradient" x1="28" y1="18" x2="193" y2="214" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1220"/>
+      <stop offset="1" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="routeGradient" x1="74" y1="62" x2="146" y2="132" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="110" y1="53" x2="110" y2="188" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F59E0B"/>
+      <stop offset="1" stop-color="#F97316"/>
+    </linearGradient>
+    <filter id="softShadow" x="10" y="6" width="200" height="220" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feOffset dy="4"/>
+      <feGaussianBlur stdDeviation="6"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.0588 0 0 0 0 0.0901 0 0 0 0 0.1647 0 0 0 0.28 0"/>
+      <feBlend in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <g filter="url(#softShadow)">
+    <path d="M110 10C62 10 24 48 24 96C24 153 80 194 103 212C107 215 113 215 117 212C140 194 196 153 196 96C196 48 158 10 110 10Z" fill="url(#pinGradient)"/>
+  </g>
+  <circle cx="110" cy="94" r="52" fill="#F8FAFC"/>
+  <path d="M74 122V78L96 102L110 80L124 102L146 78V122" stroke="url(#routeGradient)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M110 61V72" stroke="url(#routeGradient)" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="110" cy="54" r="7" fill="url(#accentGradient)"/>
+  <circle cx="110" cy="184" r="10" fill="url(#accentGradient)"/>
+  <text x="250" y="128" fill="#0F172A" font-family="Montserrat, Poppins, 'Segoe UI', sans-serif" font-size="76" font-weight="800" letter-spacing="2">MOTOMAP</text>
+  <path d="M252 154H568" stroke="#10B981" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="584" cy="154" r="8" fill="url(#accentGradient)"/>
+</svg>

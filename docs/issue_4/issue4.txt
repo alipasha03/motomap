@@ -1,0 +1,150 @@
+ MOTOMAP: Motosikletçiler İçin Rota, Viraj
+           ve Risk Analizi
+                             Mühendislik ve Algoritma Notları
+
+
+1     Giriş
+Motosikletçiler için “keyifli yol” genellikle yüksek viraj sayısı ve ritmik dönüşler anlamına ge-
+lirken; “güvenlik” bu virajların yarıçapı ve görüş açısıyla ilgilidir. Yolun gerçek uzunluğu ve
+kuş uçuşu mesafe hesaplamasına ek olarak, algoritmaya mutlaka bir güvenlik katsayısı dâhil
+edilmelidir.
+
+
+2     Tehlikeli Viraj Analizi: Eğrilik Yarıçapı (R)
+Tehlikeli virajları tespit etmek için her bir yol segmenti (way) içindeki ardışık 3 noktayı (A, B, C)
+kullanarak, bu noktalardan geçen çemberin yarıçapını hesaplamak gerekir.
+
+    • Kritik Eşik: Genellikle yarıçapı R < 15 − 20 metre olan virajlar “dar/keskin” kabul
+      edilir.
+
+    • Hesaplama: Python’da Shapely kütüphanesi kullanılarak koordinatlar üzerinden Men-
+      ger Curvature (Menger Eğriliği) hesaplanabilir.
+
+    • Mühendislik Notu: Yönelim (bearing) değişim hızı da kritik bir metriktir. Eğer yön, 10
+      metrelik bir mesafe içinde 60◦ ’den fazla değişiyorsa, bu bir “U” virajı (Hairpin) olabilir.
+
+
+3     Algoritmanın Verimli Entegrasyonu (Maliyet Fonksi-
+      yonu)
+Yönlendirme motoruna (A* veya Dijkstra gibi) bu veri bir ağırlık (weight) olarak eklenmelidir.
+
+    • Keyifli Rota Modu: Algoritma en kısa yolu değil, “Kıvrımlılık Skoru” (Curvature Score)
+      en yüksek olan yolu seçer.
+                                                       Mesafe
+                                        Cost =
+                                                 1 + Viraj Katsayısı
+
+    • Güvenlik Modu: Kullanıcı güvenliği önceliklendiriyorsa veya hava yağmurluysa, R
+      değeri düşük (keskin virajlı) yollara yüksek ceza puanı (penalty) atanır.
+
+
+
+
+                                                   1
+     4     Eğim ve Görüş (DEM Entegrasyonu)
+     Keskin bir viraj (R düşük), aynı zamanda dik bir inişle birleşiyorsa bu durum kombine bir
+     tehlike yaratır.
+                           Risk Durumu =⇒ (R < 20 m) ∧ (Eğim < −8%)
+     Bu şartlar sağlandığında rota “Yüksek Riskli” olarak işaretlenmelidir. Python’da rasterio
+     kütüphanesi kullanılarak yolun geçtiği koordinatlardaki yükselti farkı alınıp, virajın eğimi he-
+     saplanabilir.
+
+
+     5     Veri Hazırlama ve Enterpolasyon (Interpolation)
+     Kullanıcının çizdiği rota (LineString), genellikle düzensiz aralıklı koordinat noktalarından
+     oluşur. Sağlıklı bir viraj analizi için noktalar arasındaki mesafeyi eşitlemek (örneğin her 5 veya
+     10 metrede bir nokta) gerekir.
+
+         • Neden? Eğer noktalar arası mesafe çok uzaksa keskin virajlar kaçırılır; çok yakınsa GPS
+           gürültüsü nedeniyle düz yol virajlı sanılabilir.
+
+         • Çözüm: Shapely kütüppesindeki interpolate fonksiyonunu kullanarak rota sabit aralıklı
+           noktalara bölünmelidir.
+
+
+     6     Geometrik Analiz: Vektörel Açı Değişimi
+     Anlık analizde karmaşık çember denklemleri yerine, vektörel hesaplama (İç Çarpım - Dot Pro-
+     duct) çok daha hızlı sonuç verir.
+        Mantık: Ardışık üç nokta (P1 , P2 , P3 ) arasındaki iki vektörü tanımlayalım:
+
+                                      V⃗1 = P2 − P1    ve V⃗2 = P3 − P2
+
+     Bu iki vektör arasındaki açı (θ), yolun ne kadar saptığını gösterir.
+
+         • Keyifli Viraj (Fun Score): 15◦ < θ < 45◦ arasındaysa bu akıcı bir virajdır.
+
+         • Tehlikeli Viraj (Danger Score): θ > 60◦ ise ve bu değişim çok kısa bir mesafede (örn.
+           20 metre) gerçekleşiyorsa, burası bir “Hairpin” veya sert virajdır.
+
+
+     7     Python ile Anlık Analiz Fonksiyonu (Vektörize Edilmiş)
+     NumPy kullanılarak tüm rotanın tek seferde hesaplanması anlık analiz için en verimli yöntem-
+     dir:
+ 1   import numpy as np
+ 2   from shapely . geometry import LineString
+ 3
+ 4 def a n a l y z e _ r o u t e _ c u r v e s ( coords , dis ta nc e_ th re sh ol d =20) :
+ 5     # 1. Rotayi 10 metrede bir ornekle ( Interpolation )
+ 6     line = LineString ( coords )
+ 7     distances = np . arange (0 , line . length , 10)
+ 8     points = np . array ([ line . interpolate ( d ) . coords [0] for d in distances ])
+ 9
+10        # 2. Vektorleri olustur
+11        v1 = points [1: -1] - points [: -2]
+
+
+                                                        2
+12         v2 = points [2:] - points [1: -1]
+13
+
+14         # 3. Vektorler     arasindaki acilari hesapla ( Cosine Similarity )
+15         v1_unit = v1 /     np . linalg . norm ( v1 , axis =1) [: , None ]
+16         v2_unit = v2 /     np . linalg . norm ( v2 , axis =1) [: , None ]
+17         dot_products =     np . sum ( v1_unit * v2_unit , axis =1)
+18
+19         # Clip islemi ve acilarin radyan cinsinden bulunmasi
+20         angles = np . arccos ( np . clip ( dot_products , -1.0 , 1.0) )
+21
+22         # 4. Siniflandirma
+23         danger_zones = np . where ( angles > np . radians (60) ) [0]
+24         fun_zones = np . where (( angles > np . radians (15) ) & ( angles < np . radians
+          (45) ) ) [0]
+25
+26         return danger_zones , fun_zones
+
+
+
+     8     Kullanıcı Arayüzü (Output) Sunumu ve Performans
+         • Görselleştirme: Rota üzerinde tehlikeli virajları Kırmızı, keyifli virajlı bölgeleri Sarı/Turuncu
+           renkli polylines ile gösterin.
+
+         • Özet Kartı: “Bu rota 12 keyifli viraj ve 2 yüksek riskli bölge içeriyor.”
+
+         • Performans İpucu (Sliding Window): Kullanıcı rotayı çizerken her koordinat ek-
+           lendiğinde tüm rotayı baştan analiz etmek yerine, sadece son eklenen 3-4 noktayı kap-
+           sayan son segment analiz edilmelidir. Tüm rota bittiğinde global bir “kıvrımlılık puanı”
+           hesaplanabilir.
+
+
+     9     DEM Veri Entegrasyonu
+     OSM verilerini dış kaynaklı DEM (Digital Elevation Model) verileriyle eşleştirmek için en yaygın
+     kaynaklar:
+
+         1. SRTM: Yaklaşık 30 metre çözünürlük.
+
+         2. Copernicus GLO-30: Günümüzde en hassas kabul edilen ücretsiz global DEM verisidir.
+
+         3. ASTER GDEM: 30 metre çözünürlük sunan global alternatif.
+
+         Eğim Hesaplama Mantığı: İki nokta arasındaki yükseklik farkı (∆h) ve mesafe kul-
+     lanılarak eğim hesaplanır:
+                                                          
+                                                     ∆h
+                                 Yol Eğimi (%) =            × 100
+                                                    Mesafe
+
+
+
+
+                                                        3
+
