@@ -95,32 +95,18 @@ kan{\i}tlam{\i}\c{s}t{\i}r.
 %% ================================================================
 %%  1.  INTRODUCTION
 %% ================================================================
-\section{Giri\c{s} ve Proje Vizyonu}\label{sec:intro}
+\section{Giri\c{s}}\label{sec:intro}
 
-Navigasyon end\"ustrisinde standart kabul edilen uygulamalar
-(Google~Maps, Yandex, Apple~Maps), trafikteki t\"um ara\c{c}lar{\i}
-homojen bir h{\i}z modeliyle varsayar. Bu varsay{\i}m, bir otomobilin
-veya bir kamyonun bo\c{s} bir otoyoldaki davran{\i}\c{s}{\i}n{\i}
-yakalamakta yeterliyken, bir motosikletin s{\i}k{\i}\c{s}{\i}k trafikte
-\c{s}eritler aras{\i}nda ilerleyerek elde etti\u{g}i s\"ure avantaj{\i}n{\i}
-tamamen g\"ozard{\i} eder.
-
-MOTOMAP, bu asimetriyi ``\c{S}erit Filtreleme'' (lane filtering) h{\i}z
-modeliyle yakalayan, motor hacmine (CC) g\"ore yasal
-k{\i}s{\i}tlamalar{\i} otomatik uygulayan ve rotadaki viraj
-geometrisini motos\"ur\"uc\"u perspektifinden analiz eden bir
-\emph{karar destek sistemi} olarak tasarlanm{\i}\c{s}t{\i}r.
+MOTOMAP, motosikletlerin \c{s}erit filtreleme avantaj{\i}n{\i},
+CC bazl{\i} yasal k{\i}s{\i}tlamalar{\i} ve viraj geometrisini
+matematiksel olarak modelleyen bir rota optimizasyon motorudur.
 
 %% ================================================================
 %%  2.  MATHEMATICAL MODELS
 %% ================================================================
 \section{Matematiksel Modeller ve Maliyet Fonksiyonu}\label{sec:math}
 
-\subsection{Bile\c{s}ik Maliyet A\u{g}{\i}rl{\i}kland{\i}rmas{\i}}
-
-Sistem, rota optimizasyonunda standart Dijkstra algoritmas{\i}n{\i}
-motosiklete \"ozg\"u bir bile\c{s}ik maliyet a\u{g}{\i}rl{\i}\u{g}{\i}
-$\WW(e)$ ile geni\c{s}letir.
+\subsection{Bile\c{s}ik Maliyet A\u{g}{\i}rl{\i}\u{g}{\i}}
 
 \begin{definition}[Kenar maliyet fonksiyonu]
 $\GG=(\VV,\EE)$ otonom y\"onl\"u bir \c{c}izge olsun. Her $e=(u,v)\in\EE$
@@ -144,13 +130,9 @@ $C_{\mathrm{mod}}$ s\"ur\"u\c{s} modu (standart/viraj/g\"uvenli)
 \c{c}arpan{\i}d{\i}r.
 \end{definition}
 
-\subsection{Motosiklet Seyir S\"uresi: \c{S}erit Filtreleme Modeli}
+\subsection{\c{S}erit Filtreleme H{\i}z Modeli}
 
-Trafik ak{\i}\c{s} h{\i}z{\i} $V_{\mathrm{araba}}$ \c{s}ehir
-i\c{c}inde belirli bir e\c{s}ik de\u{g}erin alt{\i}na
-d\"u\c{s}t\"u\u{g}\"unde ($V_{\mathrm{araba}} < 10\;\mathrm{km/h}$),
-motosiklet gidi\c{s} y\"on\"undeki \c{s}erit say{\i}s{\i}na
-($n_{\text{şerit}}$) ba\u{g}l{\i} olarak manevra avantaj{\i} elde eder:
+$V_{\mathrm{araba}} < 10\;\mathrm{km/h}$ oldu\u{g}unda:
 \begin{equation}\label{eq:filter}
   V_{\mathrm{moto}}
   \;=\;
@@ -169,11 +151,7 @@ $\max(1,\lfloor n_{\text{toplam}}/2\rfloor)$ de\u{g}erine e\c{s}ittir.
 
 \subsection{CC Bazl{\i} E\u{g}im Ceza Fonksiyonu}
 
-Motor hacmi ($\CC$) ile e\u{g}im ($|\alpha|$) aras{\i}ndaki ceza
-ili\c{s}kisi par\c{c}al{\i} bir fonksiyon olarak modellenmi\c{s}tir.
-50\,cc ve alt{\i} motorlar{\i}n otoyol eri\c{s}imi
-$C_{\mathrm{otoban}}=\infty$ ile engellenirken, e\u{g}im cezas{\i}
-\c{s}\"oyle tan{\i}mlan{\i}r:
+$\CC\le 50$ i\c{c}in $C_{\mathrm{otoban}}=\infty$.
 
 \begin{equation}\label{eq:cc_grade}
   C_{\mathrm{e\u{g}im}}(|\alpha|,\,\CC)
@@ -192,8 +170,7 @@ $C_{\mathrm{otoban}}=\infty$ ile engellenirken, e\u{g}im cezas{\i}
   \end{cases}
 \end{equation}
 
-\noindent Bu fonksiyonun s\"ureklili\u{g}i \c{S}ekil~\ref{fig:grade-penalty}
-ile g\"orsel\-le\c{s}tirilmi\c{s}tir.
+
 
 \begin{figure}[H]
 \centering
@@ -227,22 +204,17 @@ ile g\"orsel\-le\c{s}tirilmi\c{s}tir.
 \label{fig:grade-penalty}
 \end{figure}
 
-\subsection{Viraj Analizi: Vekt\"orel A\c{c}{\i} Hesaplamas{\i}}
+\subsection{Viraj Analizi}
 
-Her $e \in \EE$ kenar{\i}n{\i}n LineString geometrisi,
-$\Delta s = 10$\,m ad{\i}mlarla yeniden \"orneklenir. Ard{\i}\c{s}{\i}k
-noktalar aras{\i}ndaki ard{\i}\c{s}{\i}k y\"on vekt\"orleri
-$\mathbf{v}_i = \mathbf{p}_{i+1}-\mathbf{p}_i$ tan{\i}mlan{\i}r ve
-sapma a\c{c}{\i}s{\i}:
+LineString geometrisi $\Delta s = 10$\,m ile \"orneklenir.
+$\mathbf{v}_i = \mathbf{p}_{i+1}-\mathbf{p}_i$ olarak:
 \begin{equation}\label{eq:angle}
   \theta_i
-  \;=\;
-  \arccos\!\left(
+  = \arccos\!\left(
     \frac{\mathbf{v}_i \cdot \mathbf{v}_{i+1}}
          {\|\mathbf{v}_i\|\;\|\mathbf{v}_{i+1}\|}
   \right)
 \end{equation}
-hesaplan{\i}r. A\c{c}{\i}lar \"u\c{c} s{\i}n{\i}fa a\c{c}{\i}l{\i}r:
 
 \begin{table}[H]
 \centering
@@ -263,8 +235,7 @@ hesaplan{\i}r. A\c{c}{\i}lar \"u\c{c} s{\i}n{\i}fa a\c{c}{\i}l{\i}r:
 \end{tabular}
 \end{table}
 
-\noindent Y\"uksek risk b\"olgesi, tehlikeli viraj ile dik ini\c{s}in
-kesi\c{s}imi olarak tan{\i}mlan{\i}r:
+\noindent Y\"uksek risk b\"olgesi:
 \begin{equation}\label{eq:highrisk}
   \mathcal{R}(e)
   \;=\;
@@ -276,29 +247,17 @@ kesi\c{s}imi olarak tan{\i}mlan{\i}r:
 %% ================================================================
 %%  3.  MODE-SPECIFIC COST MODELS
 %% ================================================================
-\section{S\"ur\"u\c{s} Modlar{\i} ve Maliyet Formalizasyonu}\label{sec:modes}
+\section{S\"ur\"u\c{s} Modlar{\i}}\label{sec:modes}
 
-MOTOMAP \"u\c{c} s\"ur\"u\c{s} modu sunar; her mod, kenar
-a\u{g}{\i}rl{\i}\u{g}{\i}n{\i} farkl{\i} bir ama\c{c} fonksiyonuyla
-yeniden tan{\i}mlar.
-
-\begin{definition}[Yo\u{g}unluk doyurma fonksiyonu]\label{def:sat}
-$x\ge 0$ i\c{c}in doyurma (saturation) fonksiyonu:
-\begin{equation}\label{eq:sat}
-  \sigma(x) = \frac{x}{2+x},
-  \qquad
-  \sigma:\mathbb{R}_{\ge 0}\to [0,1).
-\end{equation}
+\begin{definition}[Doyurma fonksiyonu]\label{def:sat}
+$\sigma(x) = x/(2+x),\;\sigma:\mathbb{R}_{\ge 0}\to [0,1).$
 \end{definition}
 
-\noindent Viraj yo\u{g}unluklar{\i}
-$\rho_{\text{fun}}=n_{\text{fun}}/\ell_{\text{km}}$ ve
-$\rho_{\text{teh}}=n_{\text{teh}}/\ell_{\text{km}}$ tan{\i}mlanarak,
-modlara g\"ore maliyet \c{s}\"oyle verilir:
+\noindent
+$\rho_{\text{fun}}=n_{\text{fun}}/\ell_{\text{km}}$,\;
+$\rho_{\text{teh}}=n_{\text{teh}}/\ell_{\text{km}}$.
 
-\smallskip\noindent\textbf{Standart mod.}
-Salt seyir s\"uresi minimizasyonu; yol tipi bazl{\i}
-ek cezayla:
+\smallskip\noindent\textbf{Standart.}
 \begin{equation}\label{eq:standart}
   \WW_{\text{std}}(e) = T_{\mathrm{moto}}(e)
     \cdot C_{\mathrm{e\u{g}im}}
@@ -306,9 +265,7 @@ ek cezayla:
     \cdot \bigl(1 + p_{\text{yol}}\bigr).
 \end{equation}
 
-\smallskip\noindent\textbf{Viraj keyfi modu.}
-Ak{\i}c{\i} virajl{\i} yollar{\i} \"od\"ullendiren; tehlikeli
-virajlar{\i} cezaland{\i}ran form\"ulasyon:
+\smallskip\noindent\textbf{Viraj keyfi.}
 \begin{equation}\label{eq:viraj}
   \WW_{\text{viraj}}(e) =
     \frac{T_{\mathrm{moto}}(e)\cdot C_{\mathrm{e\u{g}im}}\cdot C_{\mathrm{otoban}}}
@@ -319,8 +276,7 @@ virajlar{\i} cezaland{\i}ran form\"ulasyon:
 burada $\kappa = s/(1+s)$ normalize edilmi\c{s} kıvrımlılık
 skoru ve $b_{\text{yol}}$ yol tipi bonusudur.
 
-\smallskip\noindent\textbf{G\"uvenli mod.}
-Riskli segmentleri izole eden savunmac{\i} routing:
+\smallskip\noindent\textbf{G\"uvenli.}
 \begin{equation}\label{eq:guvenli}
   \WW_{\text{g\"uv}}(e) =
     T_{\mathrm{moto}}(e)\cdot C_{\mathrm{e\u{g}im}}\cdot C_{\mathrm{otoban}}
@@ -360,12 +316,7 @@ ile $\delta_{\text{ini\c{s}}} = \max\bigl(0,\;|\min(0,\alpha)|-0.08\bigr)$.
 %% ================================================================
 %%  4.  SYSTEM ARCHITECTURE
 %% ================================================================
-\section{Sistem Mimarisi ve Mod\"uler \.{I}\c{s} Ak{\i}\c{s}{\i}}\label{sec:arch}
-
-MOTOMAP, \emph{Separation of Concerns} (sorumluluklar{\i}n
-ayr{\i}l{\i}\u{g}{\i}) prensibiyle tasarlanm{\i}\c{s}; \textbf{Faz~1}
-(veri haz{\i}rlama) ve \textbf{Faz~2} (maliyet motoru) olmak \"uzere iki
-ana a\c{s}amaya ayr{\i}lm{\i}\c{s}t{\i}r.
+\section{Sistem Mimarisi}\label{sec:arch}
 
 \begin{figure}[H]
 \centering
@@ -422,11 +373,7 @@ ana a\c{s}amaya ayr{\i}lm{\i}\c{s}t{\i}r.
 %% ================================================================
 %%  5.  ELEVATION RESILIENCE
 %% ================================================================
-\section{Y\"ukseklik API Dayan{\i}kl{\i}l{\i}k Mimarisi}\label{sec:elev}
-
-D{\i}\c{s} API ba\u{g}{\i}ml{\i}l{\i}klar{\i}n{\i}n \c{c}\"okme
-riskine kar\c{s}{\i} sistem \"u\c{c} kademeli bir geri d\"on\"u\c{s}
-(fallback) zinciriyle korunur.
+\section{Elevation Fallback Zinciri}\label{sec:elev}
 
 \begin{figure}[H]
 \centering
@@ -505,33 +452,15 @@ riskine kar\c{s}{\i} sistem \"u\c{c} kademeli bir geri d\"on\"u\c{s}
 \end{algorithmic}
 \end{algorithm}
 
-\begin{proposition}[Toplam karma\c{s}{\i}kl{\i}k]
-Algoritma, min-heap (\"oncelik kuyru\u{g}u) tabanl{\i} Dijkstra
-kullan{\i}ld{\i}\u{g}{\i}nda:
-\begin{equation}
-  \underbrace{O(|\EE|)}_\text{\"on-i\c{s}leme}
-  \;+\;
-  \underbrace{O(|\EE|+|\VV|\log|\VV|)}_\text{Dijkstra}
-  \;\in\;
-  O(|\EE| + |\VV|\log|\VV|)
-\end{equation}
-toplam zamanda \c{c}al{\i}\c{s}{\i}r. \"On-i\c{s}leme (kenar maliyet
-hesaplamalar{\i}) do\u{g}rusal zamanl{\i}d{\i}r; dolay{\i}s{\i}yla
-asimptotik s{\i}n{\i}r bir standart Dijkstra ile ayn{\i}d{\i}r.
-\end{proposition}
+\noindent Toplam karma\c{s}{\i}kl{\i}k:
+$\;O(|\EE|)_{\text{\"on-i\c{s}leme}} + O(|\EE|+|\VV|\log|\VV|)_{\text{Dijkstra}}\in O(|\EE| + |\VV|\log|\VV|).$
 
 %% ================================================================
 %%  7.  BENCHMARK RESULTS
 %% ================================================================
 \section{Benchmark Sonu\c{c}lar{\i} ve Performans Analizi}\label{sec:bench}
 
-\subsection{Kadıköy Mikro Benchmark (20 O-D \c{C}ifti)}
-
-Ayn{\i} 20 ba\c{s}lang{\i}\c{c}--hedef (O-D) \c{c}ifti
-deterministik olarak (seed~$=42$) \"orneklenmi\c{s} ve Google
-Directions API ile Valhalla (FOSSGIS) arka u\c{c}lar{\i}na
-kar\c{s}{\i} de\u{g}erlendirilmi\c{s}tir. Her test 7~kontrol
-i\c{c}erir.
+\subsection{Kad{\i}k\"oy Mikro Benchmark (20 O-D \c{C}ifti, seed$=42$)}
 
 \begin{table}[H]
 \centering
@@ -560,12 +489,7 @@ Ortalama skor & 6.75\,/\,7 & \textbf{6.90\,/\,7} \\
 \end{tabular}
 \end{table}
 
-\noindent Valhalla ile t\"um mesafe ve s\"ure kar\c{s}{\i}la\c{s}t{\i}rma
-testleri ge\c{c}mektedir (\emph{0 hata}). Google'daki 3~hata,
-Google'{\i}n farkl{\i} (proprietary) yol a\u{g}{\i}n{\i}
-kullanmas{\i}ndan kaynaklanmaktad{\i}r; Valhalla ise MotoMap ile
-ayn{\i} OSM veritaban{\i}n{\i} payla\c{s}t{\i}\u{g}{\i} i\c{c}in
-\emph{elma--elma} kar\c{s}{\i}la\c{s}t{\i}rma sa\u{g}lar.
+
 
 \begin{figure}[H]
 \centering
@@ -652,12 +576,7 @@ G\"uvenli
 %% ================================================================
 %%  9.  TESTS
 %% ================================================================
-\section{Do\u{g}rulama ve Birim Testleri}\label{sec:tests}
-
-Sistemin do\u{g}rulu\u{g}u \texttt{pytest} birim testleriyle
-kan{\i}tlanm{\i}\c{s}t{\i}r. A\c{s}a\u{g}{\i}daki tablo, her test
-senaryosunun hangi algoritmik garantiyi do\u{g}rulad{\i}\u{g}{\i}n{\i}
-\"ozetler.
+\section{Birim Testleri}\label{sec:tests}
 
 \begin{table}[H]
 \centering
@@ -776,14 +695,7 @@ senaryosunun hangi algoritmik garantiyi do\u{g}rulad{\i}\u{g}{\i}n{\i}
 %% ================================================================
 %%  11. SHORTCUT PROTECTION
 %% ================================================================
-\section{Kestirme Korumas{\i} ve G\"uvenlik Tasar{\i}m{\i}}\label{sec:shortcut}
-
-\subsection{Otoyol Kenar{\i} Kestirme Cezas{\i}}
-
-Google~Maps zaman zaman otoyol giri\c{s}/\c{c}{\i}k{\i}\c{s}
-noktalar{\i}na yak{\i}n $\le 260$\,m uzunlu\u{g}undaki yerel servis
-yollar{\i}n{\i} ``k{\i}sayol'' olarak \"onerebilir. MOTOMAP, bu
-yollara ek ceza uygular:
+\section{Kestirme Korumas{\i}}\label{sec:shortcut}
 
 \begin{equation}\label{eq:shortcut}
   p_{\text{kestirme}}(e) =
@@ -794,40 +706,5 @@ yollara ek ceza uygular:
     0    & \text{di\u{g}er}
   \end{cases}
 \end{equation}
-burada $\VV_{\text{major}}$ otoyol veya trunk kenarlar{\i}na
-bit\c{s}ik d\"u\u{g}\"umler k\"umesidir.
-
-\subsection{Y\"uksek Risk B\"olgesi \.{I}zolasyonu}
-
-G\"uvenli modda y\"uksek risk b\"olgeleri
-Denklem~\eqref{eq:highrisk} ile tan{\i}mlan{\i}r ve
-Denklem~\eqref{eq:guvenli}'deki $1.40\,\mathcal{R}$ terimi ile
-a\u{g}{\i}r \c{s}ekilde cezaland{\i}r{\i}l{\i}r.
-Tablo~\ref{tab:tests}'teki \texttt{guvenli\_avoids\_risky} testi,
-y\"uksek risk segment say{\i}s{\i}n{\i}n tam olarak
-$\mathcal{R}=0$'a d\"u\c{s}t\"u\u{g}\"un\"u do\u{g}rular.
-
-%% ================================================================
-%%  12. CONCLUSION
-%% ================================================================
-\section{Sonu\c{c}}\label{sec:conc}
-
-MOTOMAP, standart navigasyon yaz{\i}l{\i}mlar{\i}n{\i}n otomobil
-odakl{\i} yakla\c{s}{\i}mlar{\i}n{\i}n aksine, motosikletlerin
-dinamik yap{\i}s{\i}na tam uyum sa\u{g}layan yenilik\c{c}i bir
-\emph{karar destek sistemidir}. Ger\c{c}ekle\c{s}tirilen birim
-testleri ve API d\"uzeyindeki benchmark analizleri \c{s}u \"u\c{c}
-temel sonucu bilimsel olarak do\u{g}rulamaktad{\i}r:
-
-\begin{enumerate}[label=(\roman*)]
-\item Yasal k{\i}s{\i}tlamalar (CC bazl{\i} otoyol yasa\u{g}{\i},
-      e\u{g}im cezas{\i}) $100\%$~ba\c{s}ar{\i} oran{\i}yla
-      uygulanm{\i}\c{s}t{\i}r.
-\item G\"uvenlik garantisi: g\"uvenli modda y\"uksek risk segmenti
-      say{\i}s{\i} $\mathcal{R}=0$ olarak do\u{g}rulanm{\i}\c{s}t{\i}r.
-\item Valhalla baseline ile $18/20$ (\%90) tam ge\c{c}me oran{\i}na
-      ula\c{s}{\i}lm{\i}\c{s}; Google baseline ile de \%80 elde
-      edilmi\c{s}tir.
-\end{enumerate}
 
 \end{document}
