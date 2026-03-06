@@ -17,8 +17,12 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import random
+import shutil
+import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -29,6 +33,7 @@ from typing import Any
 import networkx as nx
 import osmnx as ox
 import requests
+from shapely.geometry import LineString
 
 try:
     from rich.console import Console
@@ -57,6 +62,9 @@ DEFAULT_GOOGLE_QPS = 8.0
 DEFAULT_VALHALLA_QPS = 3.0
 DEFAULT_MIN_CROW_M = 350_000.0
 DEFAULT_MAX_CROW_M = 900_000.0
+CPP_SAMPLER_AUTO_MIN_COUNT = 200_000
+CPP_SAMPLER_CALIBRATION_MIN = 1_000
+CPP_SAMPLER_CALIBRATION_MAX = 5_000
 
 # Approximate regional bounding boxes.
 ISTANBUL_REGION = {
@@ -76,7 +84,28 @@ ANTALYA_REGION = {
 CORRIDOR_PAD_LAT = 0.35
 CORRIDOR_PAD_LNG = 0.80
 
+# Main-route waypoints (lat, lng) for a narrow long-distance corridor polygon.
+MAIN_ROUTE_WAYPOINTS = [
+    (41.0082, 28.9784),  # Istanbul
+    (40.1950, 29.0600),  # Bursa
+    (39.6484, 27.8826),  # Balikesir
+    (39.4233, 29.9833),  # Kutahya
+    (38.7638, 30.5403),  # Afyon
+    (37.8746, 30.8509),  # Burdur
+    (36.8969, 30.7133),  # Antalya
+]
+
+# Buffer in degrees around the route polyline. Aims to keep graph size tractable.
+ROUTE_BUFFER_DEG = 0.22
+MAJOR_ROAD_FILTER = (
+    '["highway"~"motorway|motorway_link|trunk|trunk_link|primary|primary_link|'
+    'secondary|secondary_link|tertiary|tertiary_link"]'
+)
+FERRY_ROUTE_FILTER = '["route"="ferry"]'
+
 GOOGLE_DIRECTIONS_URL = "https://maps.googleapis.com/maps/api/directions/json"
+CPP_SAMPLER_SOURCE = Path(__file__).resolve().parents[1] / "embeddings" / "od_sampler.cpp"
+CPP_SAMPLER_EXE = Path(__file__).resolve().parents[1] / "embeddings" / "od_sampler.exe"
 
 
 @dataclass(frozen=True)
@@ -214,6 +243,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--disable-google", action="store_true", help="Disable Google backend.")
     parser.add_argument("--disable-valhalla", action="store_true", help="Disable Valhalla backend.")
     parser.add_argument("--disable-motomap", action="store_true", help="Disable MotoMap backend.")
+    parser.add_argument(
+        "--disable-cpp-sampler",
+        action="store_true",
+        help="Disable C++ O-D pair sampler and use pure Python sampling.",
+    )
+    parser.add_argument(
+        "--force-cpp-sampler",
+        action="store_true",
+        help="Force C++ O-D sampler even when auto mode would prefer Python.",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Prepare graph/pairs/resume state; skip API calls.")
 
     args = parser.parse_args()
@@ -229,6 +268,8 @@ def parse_args() -> argparse.Namespace:
         raise SystemExit("--valhalla-qps must be > 0 when Valhalla backend is enabled.")
     if args.disable_google and args.disable_valhalla and args.disable_motomap:
         raise SystemExit("At least one backend must remain enabled.")
+    if args.disable_cpp_sampler and args.force_cpp_sampler:
+        raise SystemExit("--disable-cpp-sampler and --force-cpp-sampler cannot be used together.")
     return args
 
 
@@ -282,6 +323,39 @@ def corridor_bbox() -> tuple[float, float, float, float]:
     return north, south, east, west
 
 
+def corridor_polygon():
+    route_xy = [(lng, lat) for lat, lng in MAIN_ROUTE_WAYPOINTS]
+    line = LineString(route_xy)
+    # Expand corridor around long-distance route.
+    return line.buffer(ROUTE_BUFFER_DEG, cap_style=1, join_style=1)
+
+
+def corridor_chunk_bboxes() -> list[tuple[float, float, float, float]]:
+    boxes: list[tuple[float, float, float, float]] = []
+    points = list(MAIN_ROUTE_WAYPOINTS)
+    for idx in range(len(MAIN_ROUTE_WAYPOINTS) - 1):
+        lat1, lng1 = MAIN_ROUTE_WAYPOINTS[idx]
+        lat2, lng2 = MAIN_ROUTE_WAYPOINTS[idx + 1]
+        points.append(((lat1 + lat2) / 2.0, (lng1 + lng2) / 2.0))
+
+    seen = set()
+    for lat, lng in points:
+        north = lat + ROUTE_BUFFER_DEG
+        south = lat - ROUTE_BUFFER_DEG
+        east = lng + ROUTE_BUFFER_DEG
+        west = lng - ROUTE_BUFFER_DEG
+        key = (round(north, 4), round(south, 4), round(east, 4), round(west, 4))
+        if key in seen:
+            continue
+        seen.add(key)
+        boxes.append((north, south, east, west))
+    return boxes
+
+
+def corridor_download_filter() -> list[str]:
+    return [MAJOR_ROAD_FILTER, FERRY_ROUTE_FILTER]
+
+
 def keep_largest_weak_component(graph: nx.MultiDiGraph) -> nx.MultiDiGraph:
     if graph.number_of_nodes() == 0:
         return graph
@@ -312,17 +386,49 @@ def load_or_build_corridor_graph(graph_cache: Path, console: Console) -> nx.Mult
         return graph
 
     graph_cache.parent.mkdir(parents=True, exist_ok=True)
-    north, south, east, west = corridor_bbox()
-    console.print(
-        "[cyan]Building corridor graph from bbox[/cyan] "
-        f"(north={north:.4f}, south={south:.4f}, east={east:.4f}, west={west:.4f})"
-    )
-    graph = ox.graph_from_bbox(
-        (north, south, east, west),
-        network_type="drive",
-        simplify=True,
-        retain_all=True,
-    )
+    graph = None
+    chunk_graphs: list[nx.MultiDiGraph] = []
+    boxes = corridor_chunk_bboxes()
+    console.print(f"[cyan]Building corridor graph from {len(boxes)} chunked bbox queries...[/cyan]")
+
+    for idx, (north, south, east, west) in enumerate(boxes, start=1):
+        try:
+            console.print(
+                f"[cyan]Chunk {idx}/{len(boxes)}[/cyan] "
+                f"(N={north:.3f}, S={south:.3f}, E={east:.3f}, W={west:.3f})"
+            )
+            g = ox.graph_from_bbox(
+                (north, south, east, west),
+                network_type="all",
+                custom_filter=corridor_download_filter(),
+                simplify=True,
+                retain_all=True,
+                truncate_by_edge=True,
+            )
+            if g.number_of_nodes() > 0 and g.number_of_edges() > 0:
+                chunk_graphs.append(g)
+        except Exception as exc:
+            console.print(f"[yellow]Chunk {idx} failed:[/yellow] {exc}")
+
+    if chunk_graphs:
+        graph = chunk_graphs[0]
+        for g in chunk_graphs[1:]:
+            graph = nx.compose(graph, g)
+    else:
+        # Last-resort fallback.
+        north, south, east, west = corridor_bbox()
+        console.print(
+            "[yellow]Chunked download failed, falling back to single bbox query.[/yellow]"
+        )
+        graph = ox.graph_from_bbox(
+            (north, south, east, west),
+            network_type="all",
+            custom_filter=corridor_download_filter(),
+            simplify=True,
+            retain_all=True,
+            truncate_by_edge=True,
+        )
+
     graph = prepare_corridor_graph(graph)
     ox.save_graphml(graph, graph_cache)
     console.print(f"[green]Saved graph cache:[/green] {graph_cache}")
@@ -345,6 +451,173 @@ def collect_region_nodes(
         if _node_inside_region(lat, lng, region):
             nodes.append((node_id, lat, lng))
     return nodes
+
+
+def _should_compile_cpp_sampler() -> bool:
+    if not CPP_SAMPLER_EXE.exists():
+        return True
+    if not CPP_SAMPLER_SOURCE.exists():
+        return False
+    return CPP_SAMPLER_SOURCE.stat().st_mtime > CPP_SAMPLER_EXE.stat().st_mtime
+
+
+def _cpp_toolchain_env() -> dict[str, str] | None:
+    """Prefer g++'s own MinGW bin first to avoid Conda DLL conflicts on Windows."""
+    compiler = shutil.which("g++")
+    if not compiler:
+        return None
+    compiler_dir = str(Path(compiler).resolve().parent)
+    env = os.environ.copy()
+    current_path = env.get("PATH", "")
+    env["PATH"] = (
+        f"{compiler_dir}{os.pathsep}{current_path}" if current_path else compiler_dir
+    )
+    return env
+
+
+def ensure_cpp_sampler(console: Console) -> bool:
+    if not CPP_SAMPLER_SOURCE.exists():
+        console.print(
+            f"[yellow]C++ sampler source not found:[/yellow] {CPP_SAMPLER_SOURCE}"
+        )
+        return False
+
+    if not _should_compile_cpp_sampler():
+        return True
+
+    CPP_SAMPLER_EXE.parent.mkdir(parents=True, exist_ok=True)
+    compiler = shutil.which("g++") or "g++"
+    compile_cmd = [
+        compiler,
+        "-O3",
+        "-std=c++17",
+        str(CPP_SAMPLER_SOURCE),
+        "-o",
+        str(CPP_SAMPLER_EXE),
+    ]
+    try:
+        completed = subprocess.run(
+            compile_cmd,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            env=_cpp_toolchain_env(),
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        console.print(f"[yellow]C++ sampler compile failed:[/yellow] {exc}")
+        return False
+
+    if completed.returncode != 0:
+        console.print("[yellow]C++ sampler compile error, using Python fallback.[/yellow]")
+        diagnostics = (completed.stderr or "").strip() or (completed.stdout or "").strip()
+        if diagnostics:
+            console.print(diagnostics)
+        else:
+            console.print(
+                "[yellow]Compiler returned non-zero without diagnostics. "
+                "Verify local C++ toolchain (g++/MinGW) installation.[/yellow]"
+            )
+        return False
+    return CPP_SAMPLER_EXE.exists()
+
+
+def _write_nodes_csv(path: Path, nodes: list[tuple[str | int, float, float]]) -> None:
+    with path.open("w", encoding="utf-8") as file:
+        for node_id, lat, lng in nodes:
+            file.write(f"{node_id},{lat:.8f},{lng:.8f}\n")
+
+
+def sample_pairs_cpp(
+    graph: nx.MultiDiGraph,
+    count: int,
+    seed: int,
+    min_crow_m: float,
+    max_crow_m: float,
+    console: Console,
+) -> list[ODPair] | None:
+    if not ensure_cpp_sampler(console):
+        return None
+
+    ist_nodes = collect_region_nodes(graph, ISTANBUL_REGION)
+    ant_nodes = collect_region_nodes(graph, ANTALYA_REGION)
+    if not ist_nodes or not ant_nodes:
+        return None
+
+    with tempfile.TemporaryDirectory(prefix="motomap_cpp_sampler_") as tmp_dir:
+        tmp_path = Path(tmp_dir)
+        ist_path = tmp_path / "ist.csv"
+        ant_path = tmp_path / "ant.csv"
+        out_path = tmp_path / "pairs.csv"
+        _write_nodes_csv(ist_path, ist_nodes)
+        _write_nodes_csv(ant_path, ant_nodes)
+
+        cmd = [
+            str(CPP_SAMPLER_EXE),
+            "--ist",
+            str(ist_path),
+            "--ant",
+            str(ant_path),
+            "--count",
+            str(count),
+            "--seed",
+            str(seed),
+            "--min-crow-m",
+            str(min_crow_m),
+            "--max-crow-m",
+            str(max_crow_m),
+            "--out",
+            str(out_path),
+        ]
+        try:
+            completed = subprocess.run(
+                cmd,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=180,
+                env=_cpp_toolchain_env(),
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            console.print(f"[yellow]C++ sampler execution failed:[/yellow] {exc}")
+            return None
+
+        if completed.returncode != 0 or not out_path.exists():
+            console.print("[yellow]C++ sampler returned error, using Python sampler.[/yellow]")
+            if completed.stderr:
+                console.print(completed.stderr.strip())
+            return None
+
+        pairs: list[ODPair] = []
+        with out_path.open("r", encoding="utf-8") as file:
+            for line in file:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                parts = stripped.split(",")
+                if len(parts) != 8:
+                    continue
+                case_id = int(parts[0])
+                origin_node = parts[1]
+                destination_node = parts[2]
+                o_lat = float(parts[3])
+                o_lng = float(parts[4])
+                d_lat = float(parts[5])
+                d_lng = float(parts[6])
+                crow_m = float(parts[7])
+                pairs.append(
+                    ODPair(
+                        case_id=case_id,
+                        origin=Point(lat=o_lat, lng=o_lng),
+                        destination=Point(lat=d_lat, lng=d_lng),
+                        crow_m=crow_m,
+                        origin_node=origin_node,
+                        destination_node=destination_node,
+                    )
+                )
+        if len(pairs) != count:
+            return None
+        return pairs
 
 
 def sample_pairs(
@@ -513,6 +786,8 @@ def load_or_generate_pairs(
     seed: int,
     min_crow_m: float,
     max_crow_m: float,
+    use_cpp_sampler: bool,
+    force_cpp_sampler: bool,
     console: Console,
 ) -> list[ODPair]:
     if pairs_json.exists():
@@ -523,14 +798,16 @@ def load_or_generate_pairs(
             console.print(
                 f"[yellow]Dropped {dropped} pair(s) outside crow distance filter; regenerating as needed.[/yellow]"
             )
-        pairs = sample_pairs(
-            graph,
-            count=count,
-            seed=seed,
-            min_crow_m=min_crow_m,
-            max_crow_m=max_crow_m,
-            existing=loaded[:count],
-        )
+        pairs = loaded[:count]
+        if len(pairs) < count:
+            pairs = sample_pairs(
+                graph,
+                count=count,
+                seed=seed,
+                min_crow_m=min_crow_m,
+                max_crow_m=max_crow_m,
+                existing=loaded[:count],
+            )
         if len(loaded) != len(pairs):
             save_pairs_json(
                 pairs_json,
@@ -542,14 +819,86 @@ def load_or_generate_pairs(
         return pairs
 
     console.print(f"[cyan]Generating new pairs:[/cyan] {pairs_json}")
-    pairs = sample_pairs(
-        graph,
-        count=count,
-        seed=seed,
-        min_crow_m=min_crow_m,
-        max_crow_m=max_crow_m,
-        existing=None,
-    )
+    pairs = None
+    skip_cpp_reason = ""
+    should_try_cpp = use_cpp_sampler and (force_cpp_sampler or count >= CPP_SAMPLER_AUTO_MIN_COUNT)
+    if use_cpp_sampler and not force_cpp_sampler and count < CPP_SAMPLER_AUTO_MIN_COUNT:
+        skip_cpp_reason = "batch size below auto C++ threshold"
+
+    if should_try_cpp and not force_cpp_sampler:
+        # Measure quickly on a small sample and pick the faster sampler on this machine.
+        calibration_count = min(CPP_SAMPLER_CALIBRATION_MAX, max(CPP_SAMPLER_CALIBRATION_MIN, count // 100))
+        calibration_count = min(calibration_count, count)
+        py_time_s = None
+        cpp_time_s = None
+
+        py_start = time.perf_counter()
+        _ = sample_pairs(
+            graph,
+            count=calibration_count,
+            seed=seed,
+            min_crow_m=min_crow_m,
+            max_crow_m=max_crow_m,
+            existing=None,
+        )
+        py_time_s = time.perf_counter() - py_start
+
+        cpp_start = time.perf_counter()
+        cpp_probe = sample_pairs_cpp(
+            graph=graph,
+            count=calibration_count,
+            seed=seed,
+            min_crow_m=min_crow_m,
+            max_crow_m=max_crow_m,
+            console=console,
+        )
+        cpp_time_s = time.perf_counter() - cpp_start
+
+        if cpp_probe is None:
+            should_try_cpp = False
+            skip_cpp_reason = "C++ probe failed"
+            console.print(
+                "[yellow]Auto sampler:[/yellow] C++ probe failed, Python sampler selected."
+            )
+        else:
+            should_try_cpp = cpp_time_s < py_time_s
+            if not should_try_cpp:
+                skip_cpp_reason = "Python probe faster on this machine"
+            winner = "C++" if should_try_cpp else "Python"
+            console.print(
+                "[cyan]Auto sampler benchmark:[/cyan] "
+                f"python={py_time_s:.4f}s, cpp={cpp_time_s:.4f}s, selected={winner}"
+            )
+
+    if use_cpp_sampler and not should_try_cpp:
+        console.print(
+            f"[cyan]Auto sampler:[/cyan] using Python sampler ({skip_cpp_reason or 'auto selection'}). "
+            "Use --force-cpp-sampler to override."
+        )
+
+    if should_try_cpp:
+        pairs = sample_pairs_cpp(
+            graph=graph,
+            count=count,
+            seed=seed,
+            min_crow_m=min_crow_m,
+            max_crow_m=max_crow_m,
+            console=console,
+        )
+        if pairs is not None:
+            console.print("[green]C++ sampler used for O-D generation.[/green]")
+    if pairs is None:
+        pairs = sample_pairs(
+            graph,
+            count=count,
+            seed=seed,
+            min_crow_m=min_crow_m,
+            max_crow_m=max_crow_m,
+            existing=None,
+        )
+        if use_cpp_sampler:
+            console.print("[yellow]Python sampler fallback used.[/yellow]")
+
     save_pairs_json(
         pairs_json,
         pairs,
@@ -1118,6 +1467,8 @@ def build_summary(
             "disable_google": args.disable_google,
             "disable_valhalla": args.disable_valhalla,
             "disable_motomap": args.disable_motomap,
+            "disable_cpp_sampler": args.disable_cpp_sampler,
+            "force_cpp_sampler": args.force_cpp_sampler,
             "dry_run": args.dry_run,
         },
         "pairs": {
@@ -1187,6 +1538,8 @@ def main() -> None:
         seed=args.seed,
         min_crow_m=args.min_crow_m,
         max_crow_m=args.max_crow_m,
+        use_cpp_sampler=not args.disable_cpp_sampler,
+        force_cpp_sampler=args.force_cpp_sampler,
         console=console,
     )
     console.print(f"[green]Pairs ready:[/green] {len(pairs)}")

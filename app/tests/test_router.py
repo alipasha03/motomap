@@ -6,6 +6,7 @@ from motomap.router import (
     NoRouteFoundError,
     TRAVEL_TIME_ATTR,
     add_travel_time_to_graph,
+    is_ferry_edge,
     ucret_opsiyonlu_rota_hesapla,
 )
 
@@ -38,6 +39,17 @@ def test_add_travel_time_to_graph_sets_edge_attribute():
     data = graph.edges[1, 2, 0]
     assert TRAVEL_TIME_ATTR in data
     assert data[TRAVEL_TIME_ATTR] > 0
+
+
+def test_add_travel_time_to_graph_uses_ferry_duration_when_present():
+    graph = nx.MultiDiGraph()
+    graph.add_edge(1, 2, 0, route="ferry", motorcycle="yes", length=50_000, duration="00:15:00")
+
+    add_travel_time_to_graph(graph)
+
+    data = graph.edges[1, 2, 0]
+    assert is_ferry_edge(data) is True
+    assert data[TRAVEL_TIME_ATTR] == pytest.approx(900.0)
 
 
 def test_ucretli_serbest_selects_toll_when_toll_is_faster():
@@ -166,3 +178,41 @@ def test_guvenli_mode_avoids_risky_downhill_segments():
     assert standard["secilen_rota"]["nodes"] == [1, 2, 4]
     assert safe["secilen_rota"]["nodes"] == [1, 3, 4]
     assert safe["secilen_rota"]["yuksek_risk_segment_sayisi"] == 0
+
+
+def _build_graph_for_istanbul_ferry_choice():
+    graph = nx.MultiDiGraph()
+    for n, (x, y) in {
+        1: (29.06, 40.99),
+        2: (29.09, 41.02),
+        3: (28.98, 41.03),
+        4: (29.03, 40.99),
+        5: (29.00, 41.01),
+    }.items():
+        graph.add_node(n, x=x, y=y)
+
+    graph.add_edge(1, 2, 0, length=1_500, maxspeed=50, toll="no", highway="secondary")
+    graph.add_edge(2, 3, 0, length=18_000, maxspeed=70, toll="no", highway="motorway")
+    graph.add_edge(1, 4, 0, length=800, maxspeed=40, toll="no", highway="secondary")
+    graph.add_edge(
+        4,
+        5,
+        0,
+        length=2_500,
+        route="ferry",
+        motorcycle="yes",
+        duration="00:08:00",
+    )
+    graph.add_edge(5, 3, 0, length=900, maxspeed=40, toll="no", highway="secondary")
+    return graph
+
+
+def test_cross_continent_route_can_choose_motorcycle_ferry():
+    graph = _build_graph_for_istanbul_ferry_choice()
+    result = ucret_opsiyonlu_rota_hesapla(
+        graph, 1, 3, tercih="ucretli_serbest", surus_modu="standart"
+    )
+
+    assert result["secilen_rota"]["nodes"] == [1, 4, 5, 3]
+    assert result["secilen_rota"]["feribot_iceriyor"] is True
+    assert result["secilen_rota"]["ucretli_yol_iceriyor"] is False

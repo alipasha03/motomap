@@ -57,6 +57,8 @@ def _compute_lanes_forward(data):
         oneway=True  -> lanes_forward = lanes
         oneway=False -> lanes_forward = max(1, lanes // 2)
     """
+    # `shoulder=*` describes hard-shoulder metadata on the carriageway.
+    # It is intentionally not counted as a rideable traffic lane.
     lanes = data["lanes"]
     oneway = data.get("oneway", False)
     if oneway is True or oneway == "yes":

@@ -92,3 +92,22 @@ def test_list_highway_gets_correct_defaults():
     assert data["maxspeed"] == 82
     assert data["surface"] == "asphalt"
     assert "lanes_forward" in data
+
+
+def test_shoulder_metadata_does_not_inflate_forward_lane_count():
+    G = nx.MultiDiGraph()
+    G.add_edge(
+        1,
+        2,
+        0,
+        highway="primary",
+        lanes="4",
+        oneway=False,
+        shoulder="both",
+        length=100.0,
+    )
+
+    G2 = clean_graph(G)
+    data = G2.edges[1, 2, 0]
+    assert data["lanes_forward"] == 2
+    assert data["shoulder"] == "both"

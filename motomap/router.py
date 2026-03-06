@@ -12,12 +12,14 @@ from motomap.curve_risk import add_curve_and_risk_metrics
 
 TRAVEL_TIME_ATTR = "travel_time_s"
 DEFAULT_SPEED_KMH = 50.0
+DEFAULT_FERRY_SPEED_KMH = 18.0
 # Effective moving speed calibration for real-world urban riding.
 # 1.0 means raw OSM maxspeed, lower values increase ETA.
 DEFAULT_REAL_WORLD_SPEED_FACTOR = 0.55
 # Per-segment delay (signal/turn/yield/friction) to avoid over-optimistic ETA,
 # especially on short urban routes.
 DEFAULT_SEGMENT_DELAY_S = 2.0
+DEFAULT_FERRY_BOARDING_DELAY_S = 480.0
 
 # Road type bonuses for viraj_keyfi: prefer smaller, scenic roads
 _VIRAJ_KEYFI_ROAD_BONUS = {
@@ -115,6 +117,78 @@ def _parse_speed_kmh(value, default: float = DEFAULT_SPEED_KMH) -> float:
     return default
 
 
+def _iter_normalized_values(value) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        values = []
+        for item in value:
+            values.extend(_iter_normalized_values(item))
+        return values
+    return [str(value).strip().lower()]
+
+
+def _parse_duration_s(value) -> float | None:
+    """Parse OSM duration-like values into seconds."""
+    if value is None:
+        return None
+
+    if isinstance(value, (int, float)):
+        seconds = float(value)
+        return seconds if seconds > 0 else None
+
+    if isinstance(value, list):
+        for item in value:
+            parsed = _parse_duration_s(item)
+            if parsed is not None:
+                return parsed
+        return None
+
+    raw = str(value).strip()
+    if not raw:
+        return None
+
+    iso_match = re.fullmatch(
+        r"PT(?:(?P<hours>\d+(?:\.\d+)?)H)?(?:(?P<minutes>\d+(?:\.\d+)?)M)?(?:(?P<seconds>\d+(?:\.\d+)?)S)?",
+        raw,
+        flags=re.IGNORECASE,
+    )
+    if iso_match:
+        hours = float(iso_match.group("hours") or 0.0)
+        minutes = float(iso_match.group("minutes") or 0.0)
+        seconds = float(iso_match.group("seconds") or 0.0)
+        total = (hours * 3600.0) + (minutes * 60.0) + seconds
+        return total if total > 0 else None
+
+    clock_match = re.fullmatch(r"(?P<a>\d+):(?P<b>\d{1,2})(?::(?P<c>\d{1,2}))?", raw)
+    if clock_match:
+        first = int(clock_match.group("a"))
+        second = int(clock_match.group("b"))
+        third = int(clock_match.group("c") or 0)
+        if clock_match.group("c") is None:
+            return float((first * 3600) + (second * 60))
+        return float((first * 3600) + (second * 60) + third)
+
+    token_matches = re.findall(r"(\d+(?:\.\d+)?)\s*([hms])", raw.lower())
+    if token_matches:
+        total = 0.0
+        for amount, unit in token_matches:
+            value_num = float(amount)
+            if unit == "h":
+                total += value_num * 3600.0
+            elif unit == "m":
+                total += value_num * 60.0
+            else:
+                total += value_num
+        return total if total > 0 else None
+
+    try:
+        seconds = float(raw)
+    except ValueError:
+        return None
+    return seconds if seconds > 0 else None
+
+
 def is_toll_edge(edge_data: dict) -> bool:
     """Return True when an edge is marked as toll."""
     value = edge_data.get("toll")
@@ -125,6 +199,17 @@ def is_toll_edge(edge_data: dict) -> bool:
     if isinstance(value, str):
         return value.strip().lower() in {"yes", "true", "1"}
     return False
+
+
+def is_ferry_edge(edge_data: dict) -> bool:
+    """Return True when an edge represents a ferry connection."""
+    highway_values = set(_iter_normalized_values(edge_data.get("highway")))
+    route_values = set(_iter_normalized_values(edge_data.get("route")))
+    ferry_values = set(_iter_normalized_values(edge_data.get("ferry")))
+
+    if "ferry" in highway_values or "ferry" in route_values:
+        return True
+    return any(value in {"yes", "true", "1"} for value in ferry_values)
 
 
 def add_travel_time_to_graph(
@@ -143,8 +228,28 @@ def add_travel_time_to_graph(
         default=DEFAULT_SEGMENT_DELAY_S,
     )
     segment_delay_s = min(8.0, max(0.0, segment_delay_s))
+    ferry_boarding_delay_s = _safe_float(
+        os.getenv("MOTOMAP_FERRY_BOARDING_DELAY_S"),
+        default=DEFAULT_FERRY_BOARDING_DELAY_S,
+    )
+    ferry_boarding_delay_s = min(1800.0, max(0.0, ferry_boarding_delay_s))
 
     for _, _, _, data in graph.edges(keys=True, data=True):
+        if is_ferry_edge(data):
+            duration_s = _parse_duration_s(data.get("duration"))
+            if duration_s is not None:
+                data[attr_name] = duration_s
+                continue
+
+            length_m = float(data.get("length", 0.0) or 0.0)
+            speed_kmh = _parse_speed_kmh(
+                data.get("maxspeed"),
+                default=DEFAULT_FERRY_SPEED_KMH,
+            )
+            speed_ms = max(1.0, speed_kmh / 3.6)
+            data[attr_name] = (length_m / speed_ms) + ferry_boarding_delay_s
+            continue
+
         length_m = float(data.get("length", 0.0) or 0.0)
         speed_kmh = _parse_speed_kmh(data.get("maxspeed"), default=DEFAULT_SPEED_KMH)
         speed_ms = max(1.0, (speed_kmh * speed_factor) / 3.6)
@@ -206,6 +311,7 @@ def _summarize_route(
     real_travel_time = 0.0
     total_length = 0.0
     includes_toll = False
+    includes_ferry = False
     fun_count = 0
     danger_count = 0
     high_risk_count = 0
@@ -223,6 +329,7 @@ def _summarize_route(
         real_travel_time += float(edge_data.get(TRAVEL_TIME_ATTR, 0.0))
         total_length += float(edge_data.get("length", 0.0) or 0.0)
         includes_toll = includes_toll or is_toll_edge(edge_data)
+        includes_ferry = includes_ferry or is_ferry_edge(edge_data)
         fun_count += int(edge_data.get("viraj_fun_sayisi", 0) or 0)
         danger_count += int(edge_data.get("viraj_tehlike_sayisi", 0) or 0)
         high_risk_count += int(bool(edge_data.get("yuksek_risk_bolge", False)))
@@ -234,6 +341,7 @@ def _summarize_route(
         "toplam_maliyet_s": total_time,
         "toplam_mesafe_m": total_length,
         "ucretli_yol_iceriyor": includes_toll,
+        "feribot_iceriyor": includes_ferry,
         "viraj_fun_sayisi": fun_count,
         "viraj_tehlike_sayisi": danger_count,
         "yuksek_risk_segment_sayisi": high_risk_count,

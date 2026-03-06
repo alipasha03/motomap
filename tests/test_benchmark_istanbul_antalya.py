@@ -215,3 +215,9 @@ def test_summarize_comparator_and_backend_counts():
     assert val_counts["success"] == 1
     assert val_counts["failure"] == 0
     assert val_counts["skipped"] == 1
+
+
+def test_corridor_download_filter_includes_ferries():
+    filters = bench.corridor_download_filter()
+    assert bench.MAJOR_ROAD_FILTER in filters
+    assert bench.FERRY_ROUTE_FILTER in filters

@@ -15,7 +15,8 @@ EXCLUDED_HIGHWAY_TYPES: frozenset[str] = frozenset({
     "track",
 })
 
-_ACCESS_DENY_VALUES: frozenset[str] = frozenset({"no", "private"})
+_EMERGENCY_ONLY_HIGHWAY_TYPES: frozenset[str] = frozenset({"emergency_bay"})
+_ACCESS_DENY_VALUES: frozenset[str] = frozenset({"no", "private", "emergency"})
 _EXCLUDED_SERVICE_TYPES: frozenset[str] = frozenset({
     "parking_aisle",
     "driveway",
@@ -36,6 +37,8 @@ def _is_motorcycle_forbidden(data: dict) -> bool:
     highway = _normalize_tag(data.get("highway"))
     if highway in EXCLUDED_HIGHWAY_TYPES:
         return True
+    if highway in _EMERGENCY_ONLY_HIGHWAY_TYPES:
+        return True
     if highway == "service":
         service = _normalize_tag(data.get("service"))
         if service in _EXCLUDED_SERVICE_TYPES:
@@ -45,6 +48,9 @@ def _is_motorcycle_forbidden(data: dict) -> bool:
         return True
     motor_vehicle = _normalize_tag(data.get("motor_vehicle"))
     if motor_vehicle in _ACCESS_DENY_VALUES:
+        return True
+    motorcycle = _normalize_tag(data.get("motorcycle"))
+    if motorcycle in _ACCESS_DENY_VALUES:
         return True
     return False
 

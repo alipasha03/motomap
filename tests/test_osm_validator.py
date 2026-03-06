@@ -56,6 +56,19 @@ def _make_service_restricted_graph():
     return G
 
 
+def _make_emergency_lane_graph():
+    G = nx.MultiDiGraph()
+    G.add_node(1, x=29.0, y=41.0)
+    G.add_node(2, x=29.01, y=41.0)
+    G.add_node(3, x=29.02, y=41.0)
+    G.add_node(4, x=29.03, y=41.0)
+
+    G.add_edge(1, 2, 0, highway="emergency_bay", length=20.0)
+    G.add_edge(2, 3, 0, route="ferry", motorcycle="no", length=500.0)
+    G.add_edge(3, 4, 0, highway="primary", shoulder="right", length=80.0)
+    return G
+
+
 class TestFilterMotorcycleEdges:
 
     def test_removes_cycleway(self):
@@ -131,6 +144,20 @@ class TestFilterMotorcycleEdges:
         G2 = filter_motorcycle_edges(G)
         services = [d.get("service") for _, _, d in G2.edges(data=True)]
         assert "alley" in services
+
+    def test_removes_emergency_bay_and_motorcycle_forbidden_ferry(self):
+        G = _make_emergency_lane_graph()
+        G2 = filter_motorcycle_edges(G)
+        highways = [d.get("highway") for _, _, d in G2.edges(data=True)]
+        motorcycles = [d.get("motorcycle") for _, _, d in G2.edges(data=True)]
+        assert "emergency_bay" not in highways
+        assert "no" not in motorcycles
+
+    def test_keeps_main_road_with_shoulder_metadata(self):
+        G = _make_emergency_lane_graph()
+        G2 = filter_motorcycle_edges(G)
+        shoulders = [d.get("shoulder") for _, _, d in G2.edges(data=True)]
+        assert "right" in shoulders
 
     def test_excluded_types_constant(self):
         assert "cycleway" in EXCLUDED_HIGHWAY_TYPES
