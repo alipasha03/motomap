@@ -1,0 +1,72 @@
+\documentclass[varwidth=18cm, border=1cm]{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[turkish]{babel}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{parskip}
+\usepackage{geometry}
+
+\begin{document}
+
+BİGG formunda bunu “motosikletlere özel rota zekâsını ürünleştirmek için gerekli çekirdek altyapı” olarak yazmanız en doğru yaklaşım olur. Çağrı metni bu başvuruyu Akıllı Ulaşım teması içinde değerlendiriyor; panelin baktığı ana eksenler de teknoloji düzeyi ve yenilik, yapılabilirlik ve ticarileşme potansiyeli. Aşama 2’de yatırım üst sınırı 1.350.000 TL ve fon payı \%3 olduğu için bütçeyi “MVP’yi çıkaracak, sahada doğrulayacak ve ticarileşmeye götürecek” kalemler halinde sunmak daha güçlü görünür.
+
+Sizin mevcut proje dokümanlarınız da bunu destekliyor. Çekirdek iş; İBB açık verisi ve OSM yol ağıyla çalışan, OSMnx/GeoPandas/NetworkX tabanlı, KDE ile risk yüzeyi üreten, A*/Dijkstra ve gerektiğinde hierarchical routing kullanan, lane-filtering mantığını ve eğim-motor hacmi etkisini maliyet fonksiyonuna koyan bir sistem. Ayrıca üniversite tarafında yüksek CPU/GPU altyapısına erişim olduğu belirtilmiş. Bu yüzden BİGG formunda iki güçlü test telefonu ve bir ana geliştirme bilgisayarı istemek çok savunulabilir; ilk günden iki ağır workstation istemek ise şart değil.
+
+Teknik ve mali açıdan en mantıklı mimari, Google’ı ana motosiklet motoru yapmak değil, Valhalla-first gitmektir. Bunun iki nedeni var. Birincisi, Google Routes API iki teker desteği sunuyor ama bu özellik enterprise fiyatlamaya giriyor; ikincisi ve daha önemlisi, Google’ın iki teker coverage listesinde Türkiye şu anda yok. Buna karşılık Valhalla dynamic, run-time costing mimarisiyle özelleştirilebilir; OSRM ise çok hızlı ama daha çok performans-odaklı, daha az esnek bir çekirdek. Bu yüzden Türkiye için motosiklet-özgü rota maliyetini siz yazacaksanız, en güçlü BİGG hikâyesi “Valhalla tabanlı çekirdek + MOTOMAP maliyet zekâsı + Google benchmark/fallback” olur.
+
+Google tarafında asıl maliyetin harita görüntüsü değil, rota ve veri servisleri olduğunu da formda doğru anlatmak gerekir. Google’ın güncel fiyat listesinde Maps SDK “unlimited” görünüyor; buna karşılık Routes Enterprise ilk 1.000 olaydan sonra 1.000 istek başına 15 USD, Geocoding ilk 10.000’den sonra 5 USD, Elevation ilk 5.000’den sonra 5 USD, Autocomplete ilk 10.000’den sonra 2,83 USD olarak fiyatlanıyor. Ayrıca Google, TWO\_WHEELER isteklerinin daha yüksek ücretlendirildiğini açıkça belirtiyor.
+
+Bu fiyatlarla örnek bir pilot maliyet hesabı yaptığımda, Google’ı rota + geocode + elevation + autocomplete için çekirdek servis gibi kullanırsanız 10 bin aylık rota senaryosu yaklaşık 288 USD/ay, 50 bin senaryosu yaklaşık 1.273 USD/ay, 100 bin senaryosu ise yaklaşık 2.665 USD/ay ediyor; yıllık karşılıkları da sırasıyla yaklaşık 3.460 USD, 15.278 USD ve 31.976 USD. Buna cloud, güvenlik, logging ve backup dahil değil. Buna karşılık Valhalla-first gidip elevation’ı açık DEM’den alır, Google’ı daha çok geocode/autocomplete/fallback için tutarsanız 50 bin aylık ölçekte yaklaşık 313 USD/ay, yani yaklaşık 3.758 USD/yıl seviyesine inmek mümkün. BİGG formu için bu fark çok değerlidir.
+
+Veri seti tarafında da yüksek lisans/kurumsal lisans parası yazmanıza gerek yok. Kendi proje metniniz zaten İBB açık veri ve OpenStreetMap üzerine kurulmuş. Yükseklik verisini de NASA SRTM veya Copernicus DEM gibi açık kaynaklardan alabilirsiniz. Bu yüzden “dataset” kalemi lisans maliyetinden çok veri temizleme, ETL, depolama ve güncelleme maliyeti olarak yazılmalı.
+
+Güvenlik tarafını da ayrıca yazın; çünkü artık sadece rota değil, kullanıcı profili, motor cc, yakıt/km kaydı, kulüpler, takip sistemi ve topluluk verisi toplanacak. Google kendi güvenlik kılavuzunda kısıtlanmamış API anahtarlarının kötüye kullanımından doğan masraftan müşterinin sorumlu olduğunu açıkça söylüyor. Hetzner tarafı Avrupa veri koruma düzenleri ve güvenlikli veri merkezi vurgusu yapıyor; Cloudflare domain’i at-cost modelle verebildiğini ve ek güvenlik servislerinin 5 USD/ay seviyesinden başladığını söylüyor. Backblaze B2 6 USD/TB/ay’dan başlıyor; Sentry Team taban fiyatı 26 USD/ay. Yani BİGG formunda “KVKK ve veri güvenliği” ayrı satır olmalı; bu yalnızca hukuk değil, doğrudan operasyonel maliyet konusu.
+
+\vspace{0.5cm}
+
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash}p{4cm} X >{\raggedleft\arraybackslash}p{4cm} @{}}
+\toprule
+\textbf{Kalem} & \textbf{Neden gerekli} & \textbf{Önerilen bütçe} \\
+\midrule
+Android test cihazı, 2 adet & Biri orta-üst segment, biri daha güçlü cihaz olacak şekilde saha testi, GPS doğruluğu, ısı/pil davranışı, farklı ekran ve performans profilleri için & 50.000 – 70.000 TL \\
+Ana geliştirme bilgisayarı, 1 adet & Android build, GIS işleme, rota ön-hesaplama, risk haritaları, Docker/CI çalıştırma için & 80.000 – 120.000 TL \\
+İkinci geliştirme bilgisayarı, opsiyonel & Ancak tam zamanlı ikinci geliştirici varsa; üniversite lab altyapısı olduğu için zorunlu değil & 60.000 – 90.000 TL \\
+Cloud ve routing altyapısı, 12 ay & Valhalla/servis katmanı, veritabanı, cache, staging, CI/CD, yedekleme & 120.000 – 250.000 TL \\
+Domain, DNS, CDN, SSL, WAF, 12 ay & Web sitesi, API kapısı, temel saldırı koruması ve alan adı yönetimi & 5.000 – 20.000 TL \\
+Monitoring, logging, crash analytics, 12 ay & Mobil hata takibi, backend logları, performans izleme & 15.000 – 40.000 TL \\
+Object storage ve backup, 12 ay & Rota çıktıları, medya, log arşivi, yedekler & 10.000 – 40.000 TL \\
+KVKK, gizlilik, veri güvenliği, pentest, hukuki dokümanlar & Kullanıcı, konum, profil, kulüp ve takip verisi nedeniyle zorunlu & 50.000 – 150.000 TL \\
+Uygulama mağaza hesapları & Google Play için tek seferlik kayıt; iOS ertelenirse Apple ilk yıl alınmayabilir & Google Play 25 USD tek sefer, Apple 99 USD/yıl \\
+Dataset / veri hazırlığı & Lisans değil; ETL, veri temizleme, indeksleme, depolama & 0 – 30.000 TL \\
+Ürünleştirme arayüzleri & Landing page, admin panel, API dokümantasyonu, kullanıcı onboarding akışları & 20.000 – 60.000 TL \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\vspace{0.5cm}
+
+
+\vspace{0.5cm}
+
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash}p{4cm} X >{\raggedleft\arraybackslash}p{3cm} @{}}
+\toprule
+\textbf{Google kullanım stratejisi} & \textbf{Aylık örnek kullanım} & \textbf{Tahmini maliyet} \\
+\midrule
+Lean benchmark/fallback & 10k route, 20k geocode, 20k elevation, 20k autocomplete & $\sim$288 USD/ay \\
+Balanced Google-heavy pilot & 50k route, 50k geocode, 50k elevation, 50k autocomplete & $\sim$1.273 USD/ay \\
+Daha yoğun Google bağımlılığı & 100k route, 100k geocode, 100k elevation, 100k autocomplete & $\sim$2.665 USD/ay \\
+Valhalla-first + açık DEM & 50k geocode, 50k autocomplete, routing kendi motorunuzda & $\sim$313 USD/ay \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\vspace{0.5cm}
+
+\end{document}

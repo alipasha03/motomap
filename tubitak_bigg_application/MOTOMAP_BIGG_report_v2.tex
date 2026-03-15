@@ -1,0 +1,495 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage{fontspec}
+\setmainfont{Latin Modern Roman}
+\setsansfont{Latin Modern Sans}
+\usepackage{polyglossia}
+\setdefaultlanguage{turkish}
+\setotherlanguage{english}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs,longtable,array,tabularx,ltablex,multirow}
+\usepackage[table]{xcolor}
+\usepackage{xurl}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{parskip}
+\usepackage{enumitem}
+\setlist{nosep}
+\renewcommand{\arraystretch}{1.22}
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{3em}
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=teal!60!black,urlcolor=blue!55!black,pdftitle={MOTOMAP BİGG Teknik ve Stratejik Raporu},pdfauthor={OpenAI}}
+\definecolor{accent}{HTML}{0E4F6E}
+\definecolor{soft}{HTML}{EDF4F7}
+\definecolor{soft2}{HTML}{F6F8FA}
+\definecolor{linec}{HTML}{D9E2E8}
+\titleformat{\section}{\Large\bfseries\color{accent}}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{accent}}{\thesubsection.}{0.6em}{}
+\captionsetup{font=small,labelfont=bf}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textsf{MOTOMAP -- TÜBİTAK BİGG Değerlendirme Raporu}}
+\fancyhead[R]{\textsf{\thepage}}
+\fancyfoot[C]{}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\good}{\textbf{Yüksek}}
+\newcommand{\midv}{\textbf{Orta}}
+\newcommand{\lowv}{\textbf{Düşük}}
+\newcommand{\pot}{\textbf{Potansiyel}}
+
+\begin{document}
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{1.8cm}
+{\color{accent}\rule{\linewidth}{1.2pt}}
+\vspace{0.8cm}
+
+{\Huge\bfseries MOTOMAP için TÜBİTAK BİGG Odaklı\par}
+\vspace{0.25cm}
+{\Huge\bfseries Teknik, Ürün, Rekabet ve\\ Algoritma Raporu\par}
+
+\vspace{0.8cm}
+{\Large Motosiklet-odaklı rota zekâsı, dijital motosiklet ikizi, topluluk katmanı ve\par}
+{\Large Google Maps / Valhalla / OSRM karşılaştırması\par}
+
+\vspace{1.1cm}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{0.24\linewidth}Y}
+Hazırlanma amacı & TÜBİTAK TEYDEB 1812 BİGG değerlendirme mantığına uygun, teknik olarak savunulabilir ve yatırımcı/jüri karşısında güven veren bir MOTOMAP anlatısı oluşturmak. \\
+Kanıt temeli & Kullanıcı tarafından paylaşılan iki proje PDF'i, 1812-2026-1 çağrı duyurusu, alipasha03/MOTOMAP GitHub dökümantasyonu ve Google, Valhalla, OSRM, REVER, RISER, calimoto, Strava ve SUMO'nun resmî kaynakları. \\
+Temel öneri & MOTOMAP yalnızca bir navigasyon uygulaması olarak değil, Türkiye için motosiklet-yerel, açıklanabilir, topluluk destekli ve araç profiline duyarlı bir karar destek platformu olarak konumlandırılmalıdır. \\
+Bu sürümün farkı & Önceki rapora göre algoritma katmanı daha ayrıntılı kurulmuş; çok amaçlı maliyet yüzeyi, belirsizlik ve kuyruk riski, dijital motosiklet ikizi, topluluk önceliği, kalibrasyon ve mobil/web ürün yüzeyleri daha açık biçimde modele bağlanmıştır. \\
+\end{tabularx}
+
+\vfill
+\begin{center}
+{\large \textbf{Rapor dili:} Türkçe \hspace{1.2cm} \textbf{Teslim biçimi:} LaTeX kaynak kodu + derlenmiş PDF}\par
+\vspace{0.7cm}
+{\color{accent}\rule{\linewidth}{1.2pt}}
+\end{center}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Yönetici özeti}
+
+MOTOMAP'in en güçlü anlatısı ``Google Maps'e alternatif bir harita'' olmak değildir. En güçlü anlatı, motosiklet kullanıcıları için rota zekâsını, araç profili bilgisini, sürücü davranışını, yakıt ve kilometre hafızasını, kulüp/topluluk ilişkilerini ve açıklanabilir karar katmanını aynı sistem içinde birleştiren \emph{motosiklet-yerel dijital mobilite platformu} olmasıdır. Bu konumlandırma, hem kullanıcı tarafından paylaşılan proje PDF'leriyle hem de kamuya açık MOTOMAP dökümantasyonuyla uyumludur; çünkü mevcut bilimsel omurga zaten trafik yoğunluğu, şerit sayısı, yol geometrisi, kaza yoğunluğu, motosiklet hız dinamikleri, eğim ve motor hacmi farklılıkları üzerine kuruludur \cite{u1,u2,g1,g2}. 
+
+Mevcut resmî bulgular, Google'ın Routes API içinde iki tekerlekli motorlu araçlar için \texttt{TWO\_WHEELER} modu sunduğunu, ancak bu özelliğin beta statüsünde olduğunu, daha yüksek fiyatlandırıldığını ve ülke kapsamının sınırlı olduğunu göstermektedir \cite{o1,o2,o3,o4}. Valhalla ise dinamik maliyetlendirme, harita eşleme, yükseklik servisi, matris, izokron ve tur optimizasyonu gibi güçlü altyapı özelliklerine sahiptir \cite{o7,o8,o9,o10,o11,o12}. Bu nedenle raporun temel sonucu şudur: MOTOMAP'in iddiası ``kimse motosikleti düşünmedi'' olmamalıdır; iddia, ``hiçbir genel amaçlı sistem Türkiye bağlamında motosikletin fiziksel, topluluksal ve ürünsel gerçekliğini aynı platformda açıklanabilir biçimde bütünleştirmiyor'' şeklinde kurulmalıdır.
+
+Bu rapor, BİGG jürisinin baktığı üç ana eksen olan teknoloji düzeyi ve yenilikçi yön, yapılabilirlik ve ticarileşme potansiyeli açısından MOTOMAP'i yeniden çerçeveler \cite{u3}. Raporda özellikle algoritma katmanı derinleştirilmiş, yalnızca Dijkstra veya A* kullanan bir rota motoru yerine, sürücü ve motosiklet için dijital ikiz oluşturan, eğim ve güç ilişkisini tahmin eden, kaza ve kavşak riski ile yol yüzeyi kalitesini maliyete dönüştüren, topluluk tercihlerini sinyal olarak kullanan, belirsizlik ve kuyruk riski içeren çok amaçlı bir maliyet yüzeyi önerilmiştir. Bu ileri seviye tasarım, mevcut belgelerde yer alan bilimsel çekirdeği inkâr etmez; aksine onu BİGG düzeyinde savunulabilir ve ölçeklenebilir hâle getirir \cite{u1,u2,g2,g6,o18}. 
+
+\section{BİGG bağlamı ve neden bu fikir programa uygundur}
+
+TÜBİTAK TEYDEB 1812-2026-1 çağrı duyurusu, BİGG'in teknoloji ve yenilik odaklı iş fikirlerini katma değer ve nitelikli istihdam yaratma potansiyeli yüksek girişimlere dönüştürmeyi amaçladığını, Aşama~2 değerlendirmesinde ise iş planlarının teknoloji düzeyi ve yenilikçi yönü, uygunluğu ve yapılabilirliği ile ticarileşme potansiyeli üzerinden puanlandığını açıkça belirtmektedir \cite{u3}. Aynı çağrı metni, ``Akıllı Ulaşım'' temasını açık biçimde saymakta; ayrıca ``İletişim ve Sayısal Dönüşüm'' altında web/mobil uygulamalar, karar destek yazılımları ve yapay zekâ gibi başlıkları da kapsama dâhil etmektedir \cite{u3}. Bu nedenle MOTOMAP, yalnızca akıllı ulaşım alanına değil, karar destek yazılımı ve web/mobil uygulama başlıklarına da bağlanabilecek çok katmanlı bir girişimdir.
+
+Çağrı duyurusundaki finansman yapısı da bu rapor için önemlidir. Metin, Mükemmeliyet Mührü alan iş planları için şirket kurulumu sonrasında TÜBİTAK BİGG Fonu tarafından \%3 pay karşılığında 1.350.000~TL yatırım yapılacağını, daha sonra belirli tetikleyici koşullarla ek yatırımın da mümkün olduğunu ifade etmektedir \cite{u3}. Takvim tarafında 2026--1 çağrısı için Aşama~2 başvurularının 15 Haziran 2026 ile 3 Temmuz 2026 arasında alınacağı, sonuçların Eylül 2026 başında duyurulacağı ve destek başlangıcının 1 Ekim 2026 olduğu belirtilmektedir \cite{u3}. Bu takvim ve değerlendirme yapısı, MOTOMAP için önemlidir; çünkü ürün anlatısının hem teknik yenilik hem de ticarileşme açısından kısa sürede savunulabilir bir olgunluğa getirilmesi gerekir.
+
+\begin{table}[htbp]
+\centering
+\small
+\rowcolors{2}{soft}{white}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{0.23\linewidth}Y Y}
+\toprule
+BİGG ölçütü & Çağrı açısından anlamı & MOTOMAP için doğru yanıt \\
+\midrule
+Teknoloji düzeyi ve yenilikçi yön & Sadece yazılım yapılması yetmez; belirgin teknik yenilik ve özgün yöntem gerekir. & Motosiklet-özel rota zekâsı, eğim ve düşük CC duyarlılığı, risk yüzeyi, dijital motosiklet ikizi, açıklanabilir karar desteği ve topluluk sinyallerini kullanan çok amaçlı optimizasyon birlikte sunulmalıdır. \\
+Uygunluk ve yapılabilirlik & Teknik tasarımın uygulanabilir, aşamalı ve ölçülebilir olması beklenir. & Aşama~1'de mevcut OSM + trafik + eğim + risk omurgası, Aşama~2'de Valhalla/yerel tile + cache + mobil MVP, Aşama~3'te topluluk ve B2B analitikleri önerilmelidir. \\
+Ticarileşme potansiyeli & Kullanıcı edinimi, gelir modeli ve ölçeklenebilirlik kritik önem taşır. & B2C tarafta premium rota ve topluluk; B2B tarafta filo, sigorta, bayi, kurye ve belediye analitikleri ile çoklu gelir modeli kurulmalıdır. \\
+Tematik uyum & Çağrı alanlarıyla bağ açık kurulmalıdır. & Birincil tema Akıllı Ulaşım; ikincil bağ Web/Mobil Uygulamaları, Karar Destek Yazılımları ve Yapay Zekâdır. \\
+\bottomrule
+\end{tabularx}
+\caption{MOTOMAP'in BİGG değerlendirme mantığına göre yeniden çerçevelenmesi. Kaynak: 1812-2026-1 çağrı duyurusu \cite{u3}.}
+\end{table}
+
+\section{MOTOMAP'in mevcut kanıt tabanı: bugün ne gerçekten var, ne öneri düzeyinde?}
+
+Kullanıcı tarafından paylaşılan \emph{Ali\_Ozuysal\_Projesi-Copy.pdf} dosyası, MOTOMAP'in araştırma çekirdeğini açık biçimde ortaya koymaktadır. Bu metinde İstanbul için İBB açık veri portalından trafik, şerit, hız, kaza ve yol geometrisi verilerinin toplanması, OpenStreetMap tabanlı yol ağının OSMnx ve NetworkX ile kurulması, kaza yoğunluklarının KDE ile risk yüzeyine çevrilmesi ve motosiklet ile otomobil için ayrı maliyet fonksiyonlarıyla Dijkstra/A* rotalarının hesaplanması planlanmaktadır. Aynı belge, algoritmanın ana akım navigasyon sistemleriyle kıyaslanacağını, en az 50 farklı senaryoda test edileceğini ve en az \%15 seyahat süresi iyileşmesi hedeflendiğini belirtmektedir \cite{u1}. Bu, BİGG açısından değerlidir; çünkü problem tanımı, veri kaynağı ve başarı kriteri aynı belgede mevcuttur.
+
+\emph{MOTOMAP\_YOKUŞ-Copy.pdf} dosyası, bu genel yaklaşımı çok daha kritik bir seviyeye taşır. Beşiktaş ile Gayrettepe arasındaki simülasyonda algoritma, 50cc scooter için dik yokuşlu kısa rotayı reddedip daha uzun ama daha düz bir hattı tercih ederken, daha yüksek hacimli motosiklet için kısa ve dik rotayı korumaktadır \cite{u2}. Bu bulgu küçümsenmemelidir; çünkü standart rota motorlarının çoğu yolun uzunluğunu ve tahmini süresini temel alır, ancak motosikletin motor gücü ile topografya arasındaki ilişkiyi kullanıcı profili düzeyinde modellemez. Bu nedenle yokuş PDF'i, MOTOMAP'in ``araç tipine göre farklı rota'' iddiasının en somut erken kanıtıdır.
+
+GitHub tarafında ise kamuya açık README, sistemi ``motorcyclists için akıllı rota optimizasyon motoru'' olarak tanımlamakta; OSM yol grafı, eğim verisi, trafik, sürüş modu, lane filtering, motor hacmine duyarlı kısıt ve eğim cezaları, ücretli/ücretsiz yol kıyaslaması gibi çekirdek yapı taşlarını göstermektedir \cite{g1}. Mimari notu, veri katmanından başlayıp değerlendirme ve kalibrasyon döngüsüne kadar giden beş katmanlı bir sistem tarif eder; bu, özellikle üretimde parametre ayarı ve regresyon önleme açısından olgundur \cite{g2}. İstanbul--Antalya 10K benchmark belgesi ise Google, Valhalla ve MotoMap karşılaştırmasını nasıl koşmak gerektiğini, hangi metriklerin tutulacağını ve 10.000 örnek için hangi çıktının üretileceğini tanımlar \cite{g3}. Ancak bu noktada önemli dürüstlük sınırı şudur: kıyasın metodolojisi yazılmıştır, fakat kamuya açık dökümantasyonda MOTOMAP'in kazandığını gösteren özet tablo henüz yayımlanmamıştır. Bu nedenle benchmark, üstünlük kanıtı değil, metodolojik ciddiyet kanıtı olarak sunulmalıdır.
+
+\begin{table}[htbp]
+\centering
+\small
+\rowcolors{2}{soft}{white}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{0.2\linewidth}Y Y}
+\toprule
+Boyut & Bugün belgeyle desteklenen durum & Henüz kanıtlanmamış veya öneri düzeyinde kalan kısım \\
+\midrule
+Problem tanımı & Motosikletin otomobilden farklı trafik, güvenlik ve yol davranışı gösterdiği açık biçimde tanımlanmış durumda \cite{u1,g1}. & Bu farkın saha verisiyle büyük ölçekte ne kadar üstün sonuç verdiği henüz kamuya açık sayılarla doğrulanmış değil. \\
+Eğim ve motor kapasitesi & 50cc ile daha büyük motorlar için farklı rota davranışı somut simülasyonla gösterilmiş durumda \cite{u2}. & Gerçek şehir verisi, çok sayıda araç tipi ve farklı hava koşullarıyla doğrulanmış bir fizik modeli henüz yok. \\
+Risk yüzeyi & KDE tabanlı kaza/risk katmanı ve segment bazlı güvenlik maliyeti fikri mevcut \cite{u1}. & Hava, gece, kör kavşak, yol yüzeyi ve topluluk geri bildirimi ile zenginleştirilmiş dinamik risk modeli henüz öneri düzeyinde. \\
+Ürün yüzeyi & API, web, mobil ve çıktı katmanları README içinde tanımlanmış \cite{g1}. & Kulüp, dijital garaj, yakıt/km hafızası, 3D motosiklet ikizi ve topluluk sinyalleri kamuya açık dokümantasyonda tam ürün modülü hâline getirilmemiş. \\
+Ölçekleme & Valhalla entegrasyonunun aşamalı planı yazılmış durumda \cite{g6}. & Yerel tile, cache, gözlenebilirlik ve p95 gecikme düşüşü henüz kamuya açık sonuçlarla gösterilmemiş. \\
+\bottomrule
+\end{tabularx}
+\caption{MOTOMAP için ``bugünkü gerçeklik'' ile ``önerilen ileri aşama'' arasındaki ayrım.}
+\end{table}
+
+\section{Rekabet haritası: Google Maps, Valhalla, OSRM ve motosiklet-topluluk ürünleri}
+
+Google Maps Platform tarafında en kritik gerçek, Routes API'nin iki tekerlekli motorlu araçlar için resmî destek sunmasıdır. Google, \texttt{TWO\_WHEELER} modunu açıkça belgeler; bunun beta statüsünde olduğunu, daha yüksek fiyatlandığını ve kapsamının ülkelere göre değiştiğini ifade eder \cite{o1,o2,o3,o5}. Ayrıca Google'ın \texttt{TRAFFIC\_AWARE\_OPTIMAL} seçeneği daha yüksek kaliteyi daha yüksek gecikme pahasına sağlar; \texttt{Compute Route Matrix} ise 625 elemana kadar rota matrisi hesaplayabilir \cite{o4,o5}. Bu yüzden ``Google motosikleti hiç düşünmüyor'' demek doğru değildir. Doğru cümle şudur: Google güçlü, ancak kara kutu bir servis olarak Türkiye'ye özgü motosiklet alışkanlıklarını, düşük CC kısıtlarını, kulüp davranışını ve açıklanabilir ürün katmanını sizin yerinize kurmaz.
+
+Valhalla cephesinde tablo daha da nettir. Valhalla'nın resmî dokümantasyonu dinamik, çalışma anında maliyetlendirme, özelleştirilebilir rota üretimi, yükseklik entegrasyonu, harita eşleme, izokron, matris ve tur optimizasyonu gibi yetenekleri vurgular \cite{o7,o8,o9,o10,o11,o12}. GitHub üzerindeki resmî tartışmalar da motosiklet maliyetlendirmesinin, \texttt{use\_highways}, \texttt{use\_tracks}, eğim ve viraj gibi faktörlerle yıllardır düşünüldüğünü gösterir \cite{o13}. Bu nedenle Valhalla, küçümsenecek bir rakip değildir; tam tersine MOTOMAP'in altyapı ortağı olmaya en uygun açık kaynak tabanlardan biridir. MOTOMAP için en akıllı yol, Valhalla'yı ``yenmek'' değil, Valhalla'nın güçlü çekirdeği üzerine motosiklet-yerel maliyet ve ürün katmanını bindirmektir \cite{g6}.
+
+OSRM ise ham yön bulma performansı açısından çok önemlidir. Resmî sitesi, kıtasal ağları milisaniye seviyesinde işleyebildiğini, OSM verisini esnek biçimde içe aldığını ve profil tabanlı özelleştirmeyi desteklediğini belirtmektedir \cite{o14}. Ancak OSRM'nin kamusal konumu, zengin motosiklet-topluluk ürünü olmaktan çok yüksek performanslı en kısa yol motoru olmaktır. Bu nedenle OSRM, ``ham routing verimliliği'' için kıyas noktasıdır; fakat MOTOMAP'in gelecekteki dijital ikiz, topluluk ve açıklanabilirlik katmanına Valhalla kadar doğal zemin sunmaz.
+
+Motosiklet odaklı tüketici uygulamaları tarafında REVER, RISER ve calimoto oldukça öğreticidir. REVER resmî sitesinde rota planlama, GPS takibi, harita ve sürücü bağlantısı vurgulanmaktadır \cite{o15}. RISER, motosiklet-topluluk ağı, rota planlama, paylaşım ve grup sürüşü özelliklerini öne çıkarır \cite{o16}. calimoto ise kıvrımlı yolları öne çıkaran rota planlama ve web + mobil ürün yüzeyiyle dikkat çeker \cite{o17}. Strava ise motosiklet uygulaması değildir, ancak kulüpler, rotalar ve aktivite temelli topluluk etkileşiminin ürün bağlılığı yarattığını çok net gösterir \cite{o18}. Bu örnekler, MOTOMAP için iki sonucu beraber doğurur: topluluk yeni değildir; fakat topluluk ile motosiklet-özgü rota zekâsını aynı karar motoruna bağlamak hâlâ güçlü bir fırsattır.
+
+\begin{table}[htbp]
+\centering
+\scriptsize
+\rowcolors{2}{soft}{white}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{0.16\linewidth}p{0.12\linewidth}p{0.12\linewidth}p{0.11\linewidth}p{0.11\linewidth}p{0.11\linewidth}Y}
+\toprule
+Sistem & Motosiklet modu & Trafik gücü & Özelleştirme & Topluluk/garaj & Türkiye-yerel uyum & MOTOMAP açısından asıl fark \\
+\midrule
+Google Routes API & Var; iki tekerlekli mod, beta \cite{o1,o2} & \good & \lowv & \lowv & \midv & Büyük ölçekli veri ve trafik güçlü; ancak kara kutu yapı, ülke kapsamı ve ürün kişiselleştirmesi sınırlayıcıdır. \\
+Valhalla & Açık kaynak maliyetlendirme ile motosiklet profiline uygun genişletme mümkün \cite{o7,o8,o13} & \midv & \good & \lowv & \pot & Altyapı olarak çok güçlüdür; farkı yaratacak olan, Valhalla üstüne eklenecek MOTOMAP maliyet modeli ve ürün yüzeyidir. \\
+OSRM & Doğrudan motosiklet-ürün odağı yok \cite{o14} & \lowv--\midv & \midv & \lowv & \pot & En güçlü yanı ham hızdır; zengin motosiklet mantığı için ek katman gerekir. \\
+REVER & Motosiklet odaklı planlama ve takip \cite{o15} & \midv & \lowv--\midv & \good & \lowv & Ürün ve topluluk hissi güçlüdür; fakat Türkiye-yerel açıklanabilir rota zekâsı anlatısı öne çıkmaz. \\
+RISER & Motosiklet odaklı planlama ve topluluk \cite{o16} & \midv & \lowv--\midv & \good & \lowv & Grup sürüşü ve topluluk açısından öğreticidir; ancak düşük-CC ve yol/risk dijital ikizi farklılaştırılabilir. \\
+calimoto & Motosiklet rota planlayıcı, kıvrımlı yol vurgusu \cite{o17} & \midv & \midv & \midv & \lowv & ``Twisty'' deneyimi öğreticidir; fakat Türkiye-şehir içi düşük-CC ve risk odaklı katman açık fırsattır. \\
+MOTOMAP (bugün) & Güçlü kavramsal çekirdek \cite{u1,u2,g1} & \pot & \pot & \pot & \pot & Bilimsel çekirdek iyi; ancak ürün ve saha validasyonu erken aşamadadır. \\
+MOTOMAP (önerilen hedef) & Dijital ikiz + çok amaçlı maliyet + topluluk sinyali & \good & \good & \good & \good & Türkiye için motosiklet-yerel açıklanabilir karar destek platformu. \\
+\bottomrule
+\end{tabularx}
+\caption{Rakip ve emsal sistemlerin MOTOMAP perspektifinden karşılaştırılması.}
+\end{table}
+
+\section{Verimlilik analizi: ``efficiency'' hangi boyutta ölçülmelidir?}
+
+BİGG jürisi karşısında ``verimlilik'' sözcüğünü tek bir anlamda kullanmak risklidir. Çünkü Google, Valhalla, OSRM ve MOTOMAP farklı alanlarda verimlidir. Bu nedenle bu rapor dört ayrı verimlilik türü önerir. Birincisi \textbf{hesaplama verimliliği}dir; yani istenen rotanın ne kadar hızlı ve ne kadar kararlı üretildiği. İkincisi \textbf{tahmin verimliliği}dir; yani üretilen ETA veya rota seçiminin gerçek dünyaya ne kadar yakın olduğu. Üçüncüsü \textbf{operasyonel verimlilik}tir; yani servis maliyeti, barındırma yapısı, lisans ve ölçekleme masrafları. Dördüncüsü \textbf{ürün verimliliği}dir; yani sistemin kullanıcıyı ne kadar sık geri getirdiği, ne kadar veri topladığı ve ne kadar güçlü ağ etkisi oluşturduğu.
+
+Bu ayrım yapıldığında tablo berraklaşır. Google yönetilen servis olarak trafik verisi ve küresel operasyon verimliliğinde üstündür; fakat ücretli ve kara kutu bir yapıdır \cite{o1,o4,o5}. Valhalla özelleştirme ve self-host açısından güçlüdür; yerel tile ve cache ile maliyet/verimlilik dengesi kurmaya uygundur \cite{o7,o8,o9,o12}. OSRM ham hız açısından referans noktasıdır \cite{o14}. MOTOMAP ise bugün itibarıyla kamuya açık kanıt düzeyinde bu üçlüden üstün değildir; fakat Türkiye'de motosiklet-özel ETA, düşük CC uyum, dik yokuş hassasiyeti, topluluk verisi ve açıklanabilir rota kartlarıyla \emph{dar ama yüksek değerli} bir verimlilik alanı yaratabilir \cite{u1,u2,g2,g6}. 
+
+\begin{table}[htbp]
+\centering
+\small
+\rowcolors{2}{soft}{white}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{0.22\linewidth}p{0.15\linewidth}p{0.15\linewidth}p{0.15\linewidth}Y}
+\toprule
+Verimlilik türü & Google & Valhalla/OSRM & MOTOMAP için gerçekçi hedef \\
+\midrule
+Hesaplama verimliliği & Yönetilen servis avantajıyla yüksek; ancak en iyi kalite modunda gecikme artabilir \cite{o4}. & Valhalla özelleştirilebilir, OSRM ham hızda çok güçlüdür \cite{o7,o8,o14}. & Yerel tile + cache + kademeli Valhalla entegrasyonu ile p95 gecikmeyi düşürmek ve kararlılığı artırmak. \\
+Tahmin verimliliği & Trafik ve kapsama iyi; ancak motosikletin fiziksel sınırları ve yerel davranışları kamuya açık parametrelerle sınırlı işlenir \cite{o1,o2,o6}. & Dinamik maliyetlendirme ve eşleme sayesinde teknik potansiyel yüksektir \cite{o8,o10,o11}. & Türkiye'de düşük CC, eğim, risk ve topluluk tercihi sayesinde dar alanda daha doğru ETA ve daha isabetli rota seçimi üretmek. \\
+Operasyonel verimlilik & Kullanımı kolay, ama sürekli faturalama ve özellik bazlı ücretlendirme var \cite{o5}. & Self-host ile uzun vadede daha uygun olabilir; ancak mühendislik yükü yüksektir \cite{o7,o12,o14}. & Büyüdükçe açık kaynak çekirdek üstünde kendi veri ve maliyet katmanını çalıştırmak; dış servis bağımlılığını azaltmak. \\
+Ürün verimliliği & Navigasyon kullanımı güçlü, fakat motosiklet kulüp/garaj deneyimi zayıf. & Çekirdek motor seviyesinde kalır; son kullanıcı bağlılığı doğrudan üretmez. & Kulüpler, dijital garaj, yakıt/km takibi, grup sürüşü ve rota paylaşımı ile günlük kullanım ve veri ağı oluşturmak. \\
+\bottomrule
+\end{tabularx}
+\caption{``Efficiency'' kavramının BİGG sunumunda dört ayrı boyutta anlatılması.}
+\end{table}
+
+\section{Algoritma: MOTOMAP'i gerçekten ileri seviyeye taşıyacak teknik tasarım}
+
+Bu bölümde önerilen mimari, kamuya açık belgelerde yer alan temel omurgayı alıp ileri seviye, fakat yine de uygulanabilir bir rotaya dönüştürür. En kritik çerçeve şudur: yenilik, ``A* mı kullanıyoruz yoksa Dijkstra mı?'' sorusunda değildir. Yenilik, yol kenarına yazılan ağırlıkların hangi sinyallerden üretildiğinde, o ağırlıkların nasıl kişiselleştirildiğinde, belirsizliğin nasıl hesaba katıldığında ve kullanıcının neden o rotayı gördüğünün nasıl açıklandığında ortaya çıkar \cite{u1,g2,g6,o8,o9}.
+
+\subsection{Dijital motosiklet ikizi: rota kararının merkezinde ne olmalı?}
+
+Önerilen ileri tasarımda her rota isteği yalnızca bir başlangıç ve bir bitiş noktası değildir. Her istek aynı zamanda bir durum vektörü taşır. Bu vektör, motosikletin teknik özelliklerini, sürücünün profilini ve dış bağlamı içerir. Notasyon olarak bunu
+\[
+\mathbf{s} = (\mathbf{b},\mathbf{r},\mathbf{c},\mathbf{t})
+\]
+şeklinde yazabiliriz. Burada $\mathbf{b}$ motosiklet vektörünü, $\mathbf{r}$ sürücü profilini, $\mathbf{c}$ bağlamsal değişkenleri, $\mathbf{t}$ ise zamansal durumu temsil eder. Motosiklet vektörü içine sadece CC değil, tahmini tork/sınıf, ağırlık, yakıt tipi, lastik türü, bagaj/yük durumu, bakım geçmişi ve ortalama tüketim gibi alanlar eklenmelidir. Sürücü profilinde deneyim düzeyi, risk toleransı, commute/touring tercihi, gece/rain avoidance, şerit filtreleme davranışı ve kulüp aidiyeti bulunmalıdır. Dış bağlam içinde yağış, saat, yol çalışması, etkinlik kalabalığı, bölgesel trafik bandı ve canlı topluluk uyarıları yer almalıdır. Böylece aynı iki nokta arasında 50cc scooter, 250cc commuter ve 700cc touring motosiklet için farklı maliyet yüzeyleri üretmek mümkün olur.
+
+Bu tasarım, yokuş PDF'indeki erken simülasyonun daha formel ve genellenmiş hâlidir. PDF'te 50cc için dik yokuşta hızın keskin biçimde düştüğü, büyük motor için ise kısa rotanın korunduğu gösterilmektedir \cite{u2}. İleri tasarım bunun üzerine çıkar ve fiziksel uygunluğu parça parça ceza fonksiyonları yerine olasılıksal bir fizibilite modeline dönüştürür.
+
+\subsection{Kenar özellik vektörü ve sert geçerlilik filtresi}
+
+Her yol parçası için tek bir uzunluk değeri tutmak yeterli değildir. Önerilen yol grafında her kenar için aşağıdaki türden zengin bir özellik vektörü tutulmalıdır:
+\[
+\mathbf{x}_e = [d_e, v^{\max}_e, n_e, g_e, \kappa_e, s_e, \rho_e, q_e, \tau_e, \phi_e, \ell_e, \omega_e].
+\]
+Burada $d_e$ uzunluk, $v^{\max}_e$ hız limiti, $n_e$ ileri şerit sayısı, $g_e$ eğim, $\kappa_e$ kıvrımlılık/viraj, $s_e$ yüzey tipi, $\rho_e$ canlı yoğunluk bandı, $q_e$ kavşak karmaşıklığı, $\tau_e$ ücret bilgisi, $\phi_e$ feribot/köprü ilişkisi, $\ell_e$ aydınlatma-gece görünürlüğü ve $\omega_e$ hava/zemin etkisidir. 
+
+Bundan önce sert bir geçerlilik filtresi uygulanmalıdır. OSM filtreleme planı zaten motosiklete uygun olmayan yol türlerinin, \texttt{access=no} ve \texttt{motor\_vehicle=no} gibi etiketlerin baştan elenmesini önerir \cite{g5}. İleri tasarımda bu filtre, yalnızca hukuki uygunluğu değil, araç sınıfına göre ``fiilî uygunsuzluğu'' da işaretlemelidir. Örneğin küçük bir scooter için belirli bir eğim eşiğini, belirli bir otoyol/akış kombinasyonunu veya gece ya da yağışta çok düşük güven skoru alan segmentleri sert yasak ya da çok yüksek ceza olarak işlemek mümkündür.
+
+\subsection{Motosiklet hız modeli: trafik, lane filtering ve topografyayı birleştirmek}
+
+Mevcut README içinde lane filtering için basit ama sezgisel bir hız modeli vardır; şerit sayısı arttıkça ve trafik yoğunlaştıkça motosikletin otomobilden daha hızlı akabileceği varsayılmaktadır \cite{g1}. İleri tasarım bu fikri korur, ancak onu deterministik kuraldan bağlama duyarlı tahmine dönüştürür. Önerilen tahmini kenar hızı aşağıdaki biçimde kurulabilir:
+\[
+\hat v_e(\mathbf{s}) = \min\Bigl(v^{\max}_e,\; \bigl(v^{car}_e + \Delta_{lf}(n_e,\rho_e, q_e, r_{skill})\bigr)\cdot \phi_{grade}(g_e, b_{cc}, b_{mass}, b_{load})\cdot \phi_{surf}(s_e)\cdot \phi_{weather}(\omega_e)\Bigr).
+\]
+
+Bu denklemde $v^{car}_e$ ilgili segmentteki araç baz hızını, $\Delta_{lf}$ şerit filtreleme kazancını, $\phi_{grade}$ eğim ve motor kapasitesi nedeniyle ortaya çıkan çarpanı, $\phi_{surf}$ yüzey türü ve kalite etkisini, $\phi_{weather}$ ise hava ve zemin etkisini temsil eder. Lane filtering kazancı, kör kavşak yoğunluğu ve sürücü becerisi artınca sınırlanmalı; trafik zaten akıcıysa sıfıra yakınsamalıdır. Eğim çarpanı ise düşük CC ve yüksek yükte hız düşürmeli, yüksek tork ve düşük yoğunlukta daha ılımlı davranmalıdır. Böylece yokuş mantığı PDF'teki ``bayılma efekti''ni daha genellenebilir bir formda korur \cite{u2}.
+
+\subsection{Risk modeli: kaza KDE'den dinamik motosiklet güvenlik yüzeyine}
+
+2209-A önerisinde kaza yoğunluğu için KDE ile risk yüzeyi üretme fikri bulunur \cite{u1}. Bu, çok iyi bir başlangıçtır; fakat güvenli rota iddiasının ürün seviyesinde güçlü olabilmesi için riskin yalnızca geçmiş kaza yoğunluğundan ibaret olmaması gerekir. Önerilen dinamik risk fonksiyonu şu tür bir yapı alabilir:
+\[
+\hat R_e(\mathbf{s}) = \omega_1\,KDE^{acc}_e + \omega_2\,I^{int}_e + \omega_3\,M^{surf}_e + \omega_4\,B^{blind}_e + \omega_5\,N^{night}_e + \omega_6\,W^{rain}_e + \omega_7\,H^{community}_e.
+\]
+
+Burada $KDE^{acc}_e$ tarihsel kaza yoğunluğu, $I^{int}_e$ kavşak çatışma potansiyeli, $M^{surf}_e$ yüzey bozukluğu veya kayganlık, $B^{blind}_e$ kör viraj/cross-traffic riski, $N^{night}_e$ gece görünürlük açığı, $W^{rain}_e$ hava koşulu etkisi ve $H^{community}_e$ topluluk tarafından bildirilen tehlike sinyalidir. Böylece ``güvenli rota'' soyut bir pazarlama cümlesi olmaktan çıkar, ölçülebilir bir maliyet bileşenine dönüşür.
+
+\subsection{Mekanik stres ve yakıt maliyeti: motosiklet sağlığını rota problemine katmak}
+
+MOTOMAP'in önemli fırsatlarından biri, rotayı sadece zaman problemi olarak değil, aynı zamanda mekanik stres ve tüketim problemi olarak görmesidir. Özellikle düşük CC, scooter ve şehir içi kullanımında sürekli dur-kalk, sert eğim ve düşük kaliteli zemin hem sürüş konforunu hem bakım ihtiyacını etkiler. Bu nedenle rota motoru için iki ek ölçüt önerilir:
+\[
+\hat M_e(\mathbf{s}) = \eta_1\frac{g_e^+}{\text{PWR}(\mathbf{b})+\epsilon} + \eta_2\,\text{stopgo}_e + \eta_3\,\text{clutch}_e + \eta_4\,\text{vibration}_e,
+\]
+\[
+\hat F_e(\mathbf{s}) = d_e\bigl(c_0 + c_1\,\text{stopgo}_e + c_2 g_e^+ + c_3\,\text{speedvar}_e + c_4\,\text{load}(\mathbf{b})\bigr).
+\]
+
+İlk denklem mekanik stresi, ikincisi ise beklenen yakıt/enerji tüketimini temsil eder. Böylece düşük güçlü araçlar için ``en kısa'' yerine ``motor sağlığına uygun'' rotalar üretilebilir. Yokuş PDF'inin ana mesajı tam da budur: kısa yol her araç için doğru yol değildir \cite{u2}.
+
+\subsection{Topluluk önceliği ve sosyal sinyal: ürünü rakiplerden ayıran asıl katman}
+
+Topluluk verisinin yalnızca sosyal akış değil, karar sinyali hâline gelmesi MOTOMAP'i sıradan navigasyon ürünlerinden ayırabilir. Benzer motosiklet sınıfına sahip, benzer sürüş amacı güden ve aynı şehir bağlamında hareket eden sürücülerin tercihleri belirli segmentlere ``güven'' veya ``kaçınma'' önceliği verebilir. Bu fikir, topluluk katmanını algoritmaya bağlar:
+\[
+\hat S_e(\mathbf{s}) = -\log\bigl(P(e\mid \text{cluster}(\mathbf{b},\mathbf{r},\mathbf{c})) + \epsilon\bigr).
+\]
+
+Buradaki olasılık, benzer profil kümesinin ilgili kenarı tercih etme olasılığıdır. Formül ters çevrilerek düşük güvenli segmentlerin maliyeti artırılabilir. Önemli not şudur: bu sinyal hiçbir zaman kör biçimde kalabalığı takip etmemelidir. Topluluk verisi güvenlik ve yasallık filtresinden geçmeli, spam ve aşırı sürü etkisine karşı normalize edilmelidir. Bu nedenle algoritmada ``topluluk sinyali'' destekleyici olmalı, fakat tek başına belirleyici olmamalıdır.
+
+\subsection{Belirsizlik ve kuyruk riski: yalnızca ortalama süre yetmez}
+
+Şehir içi motosiklet kullanımında en zor problem bazen ortalama ETA değil, ETA'nın ne kadar oynak olduğudur. Bir yol bazı saatlerde çok iyi, bazı saatlerde ise kör kavşaklar, sıkışma ve yol çalışmaları yüzünden ciddi sapma gösterebilir. Bu nedenle ileri modelin yalnızca beklenen maliyeti değil, kuyruk riskini de cezalandırması önerilir. Rota için toplam amaç fonksiyonu şu biçimde kurulabilir:
+\[
+J(\pi\mid \mathbf{s}) = w_T\sum_{e\in\pi}\hat T_e + w_R\sum_{e\in\pi}\hat R_e + w_M\sum_{e\in\pi}\hat M_e + w_F\sum_{e\in\pi}\hat F_e + w_U\,\mathrm{CVaR}_{\alpha}(C_\pi) - w_C\sum_{e\in\pi}\hat S_e.
+\]
+
+Burada $\hat T_e = d_e/\hat v_e$ segment süresidir. $\mathrm{CVaR}_{\alpha}(C_\pi)$ ise en kötü senaryolar altında toplam rota maliyetinin beklenen üst kuyruğunu temsil eder. Böyle bir yapı, ``hızlı ama oynak'' rotalara karşı ``biraz daha uzun ama daha güvenilir'' rotaları öne çıkarabilir. Özellikle kurye, acemi sürücü veya yağmurlu gece modu gibi senaryolarda bu bileşenin ağırlığı arttırılmalıdır.
+
+\subsection{Çok amaçlı arama: tek skor yerine Pareto etiketli A*}
+
+Yukarıdaki maliyet fonksiyonları tek skora indirgenebilir; ancak daha güçlü yaklaşım, düğüm bazında Pareto-etkin etiketler tutan çok amaçlı A* ya da label-setting yöntemidir. Her düğüm için $L=(T,R,F,M,U,S)$ vektörleri saklanır ve baskılanan etiketler elenir. Böylece sistem yalnızca ``en iyi tek rota''yı değil, kullanıcıya anlamlı üç aile sunabilir: \emph{En hızlı}, \emph{En güvenli}, \emph{Dengeli akıllı rota}. Bu çok önemlidir; çünkü BİGG jürisi ve kullanıcılar aynı sistemin farklı kullanım senaryolarına nasıl adapte olduğunu görmek ister.
+
+Valhalla tarafında dinamik maliyetlendirme ve çalışma anında farklı rota karakterleri üretme fikri zaten çekirdek mimarinin parçasıdır \cite{o8,o9}. Bu nedenle MOTOMAP, uzun vadede kendi Pareto mantığını tamamen sıfırdan kurmak zorunda değildir; önce kendi maliyet üretimini Python/servis katmanında deneyebilir, sonra Valhalla özel maliyet modülüne taşıyabilir \cite{g6}.
+
+\subsection{Kalibrasyon: sistemi kopyalanabilir heuristik olmaktan çıkaran bölüm}
+
+Kamuya açık sistem katmanları notu, değerlendirme ve kalibrasyon döngüsünü açık biçimde önerir \cite{g2}. Bu doğru yaklaşımdır; çünkü gerçek farklılaştırma parametrelerin öğrenilmesinde yatacaktır. Kalibrasyon için önerilen kayıp fonksiyonu şu şekilde yazılabilir:
+\[
+\mathcal{L}(\theta) = \alpha\,\mathrm{MAPE}_{ETA}(\theta) + \beta\bigl(1-\mathrm{Overlap}(\theta)\bigr) + \gamma\,\mathrm{KL}\bigl(P_{pred}\Vert P_{obs}\bigr) + \delta\,\mathrm{MAE}_{fuel}(\theta) + \xi\,\mathrm{RejectRate}(\theta).
+\]
+
+Burada $\theta$ model parametrelerini, MAPE ETA hatasını, Overlap gözlenen ve önerilen rota benzerliğini, KL ise gözlenen rota tercih dağılımı ile modelin öngördüğü dağılım arasındaki farkı temsil eder. Harita eşleme tarafında Valhalla'nın Meili modülü ve \texttt{trace\_route}/\texttt{trace\_attributes} servisleri, GPS izlerini yol ağına bağlamak için güçlü araçlardır \cite{o10,o11}. Trafik senaryosu kalibrasyonunda ise SUMO'nun kalibratör yapısı, akış ve hız parametrelerini gözleme göre ayarlamak için anlamlı bir simülasyon zemini sunar \cite{o19}. Böylece MOTOMAP, sabit kurallar toplamı olmaktan çıkıp veriyle iyileşen bir sistem hâline gelir.
+
+\begin{table}[htbp]
+\centering
+\small
+\rowcolors{2}{soft}{white}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{0.18\linewidth}Y Y}
+\toprule
+Katman & Mevcut belgelerdeki çekirdek & İleri seviye BİGG önerisi \\
+\midrule
+Sürüş süresi & Trafik + lane filtering + yol süresi \cite{u1,g1} & Şerit fırsatı, kavşak yoğunluğu, sürücü becerisi ve hava etkisiyle bağlamsal hız tahmini \\
+Eğim ve güç & 50cc için dik yokuş cezası, büyük motor için kısa rota korunumu \cite{u2,g1} & Güç/ağırlık, yük, yüzey ve dur-kalk etkisiyle fizibilite olasılığı ve mekanik stres modeli \\
+Güvenlik & KDE kaza riski ve tehlikeli segment düşüncesi \cite{u1} & Gece, yağış, kör viraj, yüzey bozukluğu ve topluluk uyarılarını birleştiren dinamik risk yüzeyi \\
+Arama yöntemi & Dijkstra/A* temelli yön bulma \cite{u1,g1} & Pareto etiketli çok amaçlı A* ve farklı rota aileleri \\
+Açıklanabilirlik & Henüz açık ürün katmanı olarak sınırlı & ``Bu rota neden seçildi?'' kartı: eğim, risk, topluluk, süre ve yakıt nedenlerini sayısallaştırma \\
+Öğrenme & Kalibrasyon fikri dokümante edilmiş \cite{g2} & Harita eşleme + simülasyon + kullanıcı kabul verisi ile sürekli parametre güncelleme \\
+\bottomrule
+\end{tabularx}
+\caption{MOTOMAP algoritmasının BİGG düzeyinde ileri konumlandırılması.}
+\end{table}
+
+\section{Ürün yüzeyi: mobil uygulama ve web platformu nasıl çok daha iyi temsil edilmelidir?}
+
+BİGG sunumlarında yaygın hata, algoritmayı çok iyi anlatıp ürün yüzeyini zayıf bırakmaktır. Oysa yatırım komitesi açısından teknik motor kadar önemli olan şey, bu motorun kullanıcıyla nerede buluştuğudur. MOTOMAP burada mobil uygulama ile web platformunu net biçimde ayırmalı, ancak aynı veri omurgasında birleştirmelidir. Mobil uygulama, sürüş öncesi ve sürüş anı için tasarlanmalıdır. Web tarafı ise planlama, kulüp organizasyonu, rota karşılaştırması, veri analizi ve B2B gösterge panelleri için düşünülmelidir.
+
+Mobil tarafta ana ekran; canlı sürüş modu seçimi, ``hızlı / güvenli / dengeli / düşük CC dostu / scenic'' rota aileleri, rota açıklama kartları ve tek dokunuşla navigasyon akışı etrafında kurulmalıdır. Dijital motosiklet kartı, yalnızca marka-model alanı değil, aynı zamanda motosikletin teknik profili, son bakım bilgisi, yakıt tüketimi ve takılı aksesuarları da tutmalıdır. Eğer 3D motosiklet görselleştirmesi kullanılacaksa, bu görselin dekoratif bir render olarak değil, dijital ikizin kullanıcıya anlatıldığı etkileşimli bir yüzey olarak konumlandırılması gerekir. Örneğin kullanıcının yan çanta, topcase, lastik tipi veya yolcu yükü seçmesi doğrudan maliyet modeline bağlanmalıdır.
+
+Web platformu ise ``masaüstü planlama ve analiz'' yüzü olmalıdır. Uzun rota planlama, çok noktalı kulüp sürüşü organizasyonu, rota kıyaslama, yakıt-maliyet analizi, güvenlik ısı haritaları ve topluluk moderasyonu webde daha güçlü çalışır. B2B tarafta ise aynı web tabanı; kurye filoları için rota performans analitiği, sigorta için risk haritası, bayi ve servis ağı için bakım/ziyaret akışları ve belediye/kurumlar için tehlikeli segment analizleri sunabilir. Böylece mobil uygulama yalnızca tüketici, web ise hem tüketici hem kurumsal kanal olur.
+
+\begin{table}[htbp]
+\centering
+\small
+\rowcolors{2}{soft}{white}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{0.22\linewidth}Y Y}
+\toprule
+Ürün modülü & Kullanıcıya görünen değer & Veriye ve gelire katkısı \\
+\midrule
+Mobil navigasyon yüzeyi & Anlık rota seçimi, rota açıklaması, tehlike uyarısı, sesli yönlendirme ve sürüş modu geçişi. & Sürüş izi, rota kabul/ret, segment bazlı hız ve güvenlik geri bildirimi toplar. Premium rota modları ve abonelik için ana yüzdür. \\
+Dijital garaj ve 3D motosiklet kartı & Kullanıcı motosikletini yalnızca kayıt etmez; profiline güven duyar ve sistem neden farklı rota verdiğini anlar. & CC, ağırlık, tüketim, bakım, aksesuar ve yük bilgisi veri duvarı oluşturur. Rakiplerden kopyalanması zor kişiselleştirme katmanı üretir. \\
+Kulüpler ve grup sürüşü & Topluluk, etkinlik, rota paylaşımı ve takip ilişkisi kurar. & Günlük/haftalık geri dönüş yaratır; topluluk tercihi sinyali ve ağ etkisi üretir. Sponsorluk ve marka iş birlikleri için zemin sunar. \\
+Web rota planlayıcı & Uzun rota ve çok noktalı planlama mobil ekrana göre daha rahat yapılır. & Kullanıcının daha uzun süre ürünle etkileşime girmesini sağlar; rota kaydetme ve paylaşma oranını yükseltir. \\
+B2B analitik paneli & Filo, sigorta, bayi ve belediye tarafında kurumsal değer üretir. & Tekil abonelikten daha yüksek birim gelir ve savunulabilir ticarileşme hikâyesi sağlar. \\
+\bottomrule
+\end{tabularx}
+\caption{MOTOMAP için mobil ve web yüzeyinin yatırımcı gözüyle ayrıştırılması.}
+\end{table}
+
+\section{Google, Valhalla ve MOTOMAP arasındaki fark nasıl doğru anlatılmalı?}
+
+Jüriye sunulacak en güçlü karşılaştırma cümlesi şöyle kurulmalıdır: Google, küresel kapsam ve trafik gücü yüksek, fakat kara kutu ve genel amaçlı bir servis; Valhalla, çok güçlü ve özelleştirilebilir açık kaynak yön bulma altyapısı; MOTOMAP ise Türkiye için motosiklet bağlamında hem araç hem sürücü hem topluluk sinyalini birleştiren ürün ve maliyet katmanı. Başka bir deyişle Google ve Valhalla'nın kuvvetleri vardır; MOTOMAP'in fırsatı, onların boş bıraktığı ``motosiklet-yerel açıklanabilir platform'' alanıdır.
+
+Bu fark özellikle şu ayrımda görünür. Google Route API kullanıcıya iki tekerlekli rota verebilir, trafik-tabanlı kalite modları ve ücretli yol hesapları sunabilir \cite{o1,o4,o5,o6}. Ancak kamuya açık belgelerde motosikletin motor hacmi, eğimdeki fiziksel davranışı, sürücü becerisi, bakım durumu, yerel kulüp tercihleri veya sürüş stili gibi özelliklerin rota girdisi olarak işlendiğine dair açık bir arayüz görülmez. Valhalla ise böyle bir genişlemeyi teknik olarak mümkün kılan dinamik maliyet mimarisine sahiptir \cite{o8,o9}. MOTOMAP'in doğru konumu işte burada başlar: genel amaçlı bir servisle yarışmak yerine, motosikletin ``dijital ikizini'' rota motoruna taşıyan ince katman olmak.
+
+\begin{table}[htbp]
+\centering
+\small
+\rowcolors{2}{soft}{white}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{0.2\linewidth}p{0.2\linewidth}p{0.2\linewidth}Y}
+\toprule
+Soru & Google için cevap & Valhalla için cevap & MOTOMAP için savunulacak cevap \\
+\midrule
+Motosiklet düşünüyor mu? & Evet; iki tekerlekli mod var, ancak kapsam ve ürün düzeyi sınırlı \cite{o1,o2,o3}. & Evet; dinamik maliyetlendirme ve motosiklet tartışmaları mevcut \cite{o8,o13}. & Evet; fakat farkı ``motosiklet modu'' değil, motosiklet-yerel dijital ikiz ve topluluk zekâsı oluşturuyor. \\
+Açıklanabilir mi? & Sınırlı; servis güçlü ama kara kutu. & Teknik olarak açıklanabilir, çünkü maliyet modeli geliştirilebilir. & Evet; rota kartı seviyesinde ``neden bu rota?'' açıklaması ürünün parçası yapılmalıdır. \\
+Türkiye için yerelleşebilir mi? & Haricî servis düzeyinde kısmen. & Evet, mühendislik yatırımıyla. & Bu girişimin temel iddiası zaten Türkiye-yerel motosiklet davranışını öğrenmek olmalıdır. \\
+Topluluk ve kulüpler algoritmaya bağlanabilir mi? & Doğrudan ürün çekirdeğinde görünmüyor. & Çekirdek motor bunu kendi başına vermez. & Evet; benzer profil ve kulüp sinyalleri rota güven/tercih katmanına dönüştürülebilir. \\
+Düşük CC ve dik yokuşu hassas işleyebilir mi? & Kamuya açık arayüzde buna dair ayrıntılı giriş görünmüyor. & Özel maliyet modeli yazılırsa mümkün. & Yokuş çalışması bu yönün ürün çekirdeğine dönüştürülebileceğini şimdiden gösteriyor \cite{u2}. \\
+\bottomrule
+\end{tabularx}
+\caption{Karşılaştırmanın ``rakip kötü, biz iyi'' kalıbı yerine, doğru ayrım noktalarıyla kurulması.}
+\end{table}
+
+\section{Neden Valhalla tabanlı hibrit mimari en gerçekçi teknik yoldur?}
+
+Kamuya açık MOTOMAP tartışma notu, Valhalla entegrasyonunu üç aşamalı bir yol olarak tarif etmektedir: önce HTTP wrapper, sonra yerel \texttt{pyvalhalla} aktörü, sonrasında özel maliyet ve zenginleştirilmiş tile yapısı \cite{g6}. Bu, BİGG için en inandırıcı teknik yoldur. Çünkü tüm dünyayı sıfırdan yön bulma motoru olarak yeniden kurmaya çalışmak hem maliyetli hem de odak dağıtan bir hedeftir. Oysa Valhalla üstünde geliştirilecek bir motosiklet-özgü katman çok daha hızlı kanıt üretir.
+
+Bu hibrit mimaride MOTOMAP kendi değerini üç yerde yaratır. Birincisi, veri ön işleme katmanında motosiklete uygun olmayan kenarların, düşük kaliteli yüzeylerin, yokuş risklerinin ve yerel trafik/risk sinyallerinin temizlenmesi ve zenginleştirilmesidir \cite{g5}. İkincisi, Valhalla'nın dışına yerleştirilen veya onun içine gömülen motosiklet-özgü maliyet katmanıdır. Üçüncüsü ise route cache, açıklama katmanı, topluluk sinyali, dijital garaj ve mobil/web ürün katmanıdır. Bu üçlü birlikte kurulduğunda, MOTOMAP ``routing engine yazıyoruz'' noktasından çıkıp ``motosiklet için karar ve ürün katmanı inşa ediyoruz'' noktasına gelir.
+
+\begin{table}[htbp]
+\centering
+\small
+\rowcolors{2}{soft}{white}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{0.16\linewidth}Y Y Y}
+\toprule
+Aşama & Teknik içerik & Beklenen çıktı & BİGG açısından değeri \\
+\midrule
+Aşama 1 & Mevcut Python/OSMnx omurgası + ölçülebilir benchmark + sınırlı canlı servis. & Çalışan ispat prototipi, birkaç pilot koridorda kıyas raporu. & Teknoloji ve yenilik iddiasını görünür kılar; kısa vadede yapılabilirlik gösterir. \\
+Aşama 2 & Yerel tile ve \texttt{pyvalhalla} veya Valhalla HTTP + Redis cache. & Daha düşük gecikme, daha kararlı servis, daha düşük operasyonel risk. & Yapılabilirlik ve ölçeklenebilirlik başlığını kuvvetlendirir. \\
+Aşama 3 & Özel maliyet eklentisi, topluluk sinyali, dijital garaj ve B2B analitikler. & Gerçek ürün farklılaşması ve savunulabilir veri duvarı. & Ticarileşme ve yatırım gerekçesi asıl bu aşamada güçlenir. \\
+\bottomrule
+\end{tabularx}
+\caption{Valhalla tabanlı hibrit yol haritası. Kaynak: MOTOMAP Valhalla entegrasyon planı \cite{g6}.}
+\end{table}
+
+\section{BİGG jürisine önerilen pozisyonlama cümlesi}
+
+MOTOMAP için önerilen ana cümle şöyledir: \emph{``MOTOMAP, Türkiye'de motosiklet kullanıcıları için geliştirilen, araç kapasitesi, yol topografyası, trafik, güvenlik riski ve topluluk verisini birlikte kullanan açıklanabilir bir rota ve mobilite zekâsı platformudur. Sistem yalnızca en kısa yolu değil, motosikletin teknik uygunluğunu, sürücünün bağlamını ve topluluğun sahadan gelen bilgisini dikkate alarak en doğru yolu üretmeyi hedefler.''}
+
+Bu cümle birkaç nedenle güçlüdür. İlk olarak, mevcut belgelerdeki bilimsel çekirdekle çelişmez \cite{u1,u2}. İkincisi, Google ve Valhalla gibi sistemleri yok saymaz; farkı daha doğru yerde kurar \cite{o1,o7}. Üçüncüsü, web/mobil ürün, karar destek yazılımı ve akıllı ulaşım başlıklarını tek cümlede birleştirir; yani BİGG çağrısındaki tematik alanlara oturur \cite{u3}. Dördüncüsü, yalnızca mühendislik değil, potansiyel gelir ve veri duvarı da ima eder.
+
+\section{Uygulama yol haritası ve ölçülebilir başarı tasarımı}
+
+Raporun sonunda uygulanabilir bir yol haritası bırakmak gerekir. İlk faz, dar kapsamlı ama çok inandırıcı olmalıdır. Bunun için İstanbul içinde 3--5 kritik koridor seçilerek, düşük CC ve yüksek CC araçlar için ayrı pilot değerlendirme hazırlanması doğru olur. Kullanıcı tarafından paylaşılan ilk proje dosyasında zaten en az 50 farklı senaryoda test ve üç pilot güzergâh düşüncesi yer almaktadır \cite{u1}. Bu çekirdek korunmalı, ancak BİGG sunumunda daha net KPI'lara çevrilmelidir. Örneğin ETA MAPE, rota kabul oranı, güvenli modun standart moda göre risk azaltma oranı, düşük CC dostu modun mekanik stres düşüşü ve topluluk raporlarıyla tehlikeli segment tespit hassasiyeti gibi göstergeler seçilebilir.
+
+İkinci fazda, kullanıcı uygulaması ``tam sosyal ağ'' olmadan önce bile dijital garaj ve yakıt/km takibi içermelidir. Çünkü bu modüller rota motorunu kişiselleştiren veri duvarını kurar. Üçüncü fazda kulüp, grup sürüşü ve rota paylaşım katmanı eklendiğinde ürün artık sadece navigasyon anında açılan bir uygulama olmaz; sürüşten önce, sürüş sırasında ve sürüş sonrasında yaşayan bir platforma dönüşür. Bu da ticarileşme açısından kritik avantajdır.
+
+\begin{table}[htbp]
+\centering
+\small
+\rowcolors{2}{soft}{white}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{0.2\linewidth}Y Y}
+\toprule
+Faz & Öncelikli teslimler & Ölçülebilir çıktı \\
+\midrule
+Pilot kanıt fazı & İstanbul pilot koridorları, düşük CC/yüksek CC karşılaştırması, risk katmanı, benchmark raporu. & ETA MAPE, rota kabul oranı, risk düşüşü, pilot kullanıcı geri bildirimi. \\
+MVP fazı & Mobil uygulama, dijital garaj, açıklanabilir rota kartı, temel kulüp modülü, web rota planlayıcı. & Günlük/haftalık aktif kullanım, kayıtlı motosiklet sayısı, rota kaydetme ve paylaşma oranı. \\
+Ölçekleme fazı & Valhalla yerel tile, cache, topluluk sinyali, B2B panel, kurumsal pilotlar. & p95 gecikme, işlem maliyeti, kurumsal pilot sayısı, abonelik veya B2B gelir. \\
+\bottomrule
+\end{tabularx}
+\caption{Uygulama yol haritasının teknik ve ticari çıktılara bağlanması.}
+\end{table}
+
+\section{Sonuç}
+
+Bu raporun temel sonucu çok nettir. MOTOMAP'in gücü, ``Google'dan daha büyük harita'' iddiasında değildir. Gücü, motosiklet için yol, araç ve sürücü gerçekliğini daha iyi modelleyebilecek niş ama çok değerli bir problem alanı seçmesindedir. Kullanıcı tarafından paylaşılan proje belgeleri, bu alanda erken ama anlamlı bir bilimsel çekirdek bulunduğunu göstermektedir: trafik, şerit, risk ve KDE tabanlı güvenlik yüzeyi; ayrıca eğim ve motor kapasitesine duyarlı rota mantığı \cite{u1,u2}. Kamuya açık GitHub belgeleri ise bu çekirdeği katmanlı mimari, benchmark ve Valhalla entegrasyonu yönünde geliştirmektedir \cite{g1,g2,g3,g6}. Resmî dış kaynaklar da şunu gösterir: Google ve Valhalla güçlüdür; bu yüzden MOTOMAP'in rekabet anlatısı ``kimse bunu yapmadı'' değil, ``biz bu problemi Türkiye için motosiklet-yerel, açıklanabilir ve topluluk destekli biçimde çözüyoruz'' olmalıdır \cite{o1,o7,o14,o15,o16,o17}.
+
+BİGG açısından bakıldığında en ikna edici formül, MOTOMAP'i üçlü bir yapı olarak sunmaktır. Birinci parça, motosiklet-özgü çok amaçlı rota zekâsıdır. İkinci parça, dijital motosiklet ikizi ve açıklanabilir karar destek katmanıdır. Üçüncü parça ise kulüp/topluluk ve B2B analiz yüzeyidir. Bu üçü birlikte anlatıldığında, girişim hem teknik yenilik taşır, hem uygulanabilir bir yol haritası sunar, hem de ticarileşme potansiyelini gösterir. BİGG jürisinin duyması gereken cümle tam olarak budur.
+
+\newpage
+\section*{Kaynakça}
+\addcontentsline{toc}{section}{Kaynakça}
+\begin{thebibliography}{99}
+\small
+
+\bibitem[U1]{u1}
+Ali Özuysal, \emph{MOTOMAP -- Motosiklet Ulaşımı İçin Trafik Yoğunluğu ve Mekânsal Risk Analizi Tabanlı Optimum Rotalama}, TÜBİTAK 2209-A araştırma önerisi, kullanıcı tarafından paylaşılan PDF, 2025.
+
+\bibitem[U2]{u2}
+Ali Özuysal, \emph{MotoMap Projesi: Topografya ve Motor Gücüne Duyarlı Rota Optimizasyonu}, kullanıcı tarafından paylaşılan PDF, 11 Aralık 2025.
+
+\bibitem[U3]{u3}
+TÜBİTAK TEYDEB, \emph{1812 -- Yatırım Tabanlı Girişimcilik Destek Programı 2026--1 Tohum Öncesi Yatırım Çağrısı}, kullanıcı tarafından paylaşılan PDF, 2026.
+
+\bibitem[G1]{g1}
+alipasha03 repository, \emph{MOTOMAP README}, GitHub deposu, \url{https://raw.githubusercontent.com/alipasha03/motomap/main/README.md}, erişim: 14 Mart 2026.
+
+\bibitem[G2]{g2}
+\emph{MotoMap System Layers and Calibration Loop}, GitHub dokümanı, \url{https://raw.githubusercontent.com/alipasha03/motomap/main/docs/architecture/system-layers-and-calibration.md}, erişim: 14 Mart 2026.
+
+\bibitem[G3]{g3}
+\emph{Istanbul-Antalya 10K Benchmark}, GitHub dokümanı, \url{https://raw.githubusercontent.com/alipasha03/motomap/main/docs/benchmark/istanbul-antalya-10k.md}, erişim: 14 Mart 2026.
+
+\bibitem[G4]{g4}
+\emph{Phase 1 Design: Data Infrastructure}, GitHub dokümanı, \url{https://raw.githubusercontent.com/alipasha03/motomap/main/docs/plans/2026-02-28-phase1-data-infrastructure-design.md}, erişim: 14 Mart 2026.
+
+\bibitem[G5]{g5}
+\emph{OSM Motorcycle Filtering and API Resilience}, GitHub dokümanı, \url{https://raw.githubusercontent.com/alipasha03/motomap/main/docs/plans/2026-02-28-osm-filtering-api-resilience.md}, erişim: 14 Mart 2026.
+
+\bibitem[G6]{g6}
+\emph{Concrete Valhalla Integration Plan for MOTOMAP}, GitHub discussion response, \url{https://raw.githubusercontent.com/alipasha03/motomap/main/docs/discussions/2026-03-02-discussion-8-response.md}, erişim: 14 Mart 2026.
+
+\bibitem[O1]{o1}
+Google for Developers, \emph{Get a two-wheeled vehicle route | Routes API}, \url{https://developers.google.com/maps/documentation/routes/route_two_wheel}, erişim: 14 Mart 2026.
+
+\bibitem[O2]{o2}
+Google for Developers, \emph{RouteTravelMode | Routes API}, \url{https://developers.google.com/maps/documentation/routes/reference/rest/v2/RouteTravelMode}, erişim: 14 Mart 2026.
+
+\bibitem[O3]{o3}
+Google for Developers, \emph{Countries and regions supported for two-wheeled vehicles | Routes API}, \url{https://developers.google.com/maps/documentation/routes/coverage-two-wheeled}, erişim: 14 Mart 2026.
+
+\bibitem[O4]{o4}
+Google for Developers, \emph{Set the level of traffic data | Routes API}, \url{https://developers.google.com/maps/documentation/routes/config_trade_offs}, erişim: 14 Mart 2026.
+
+\bibitem[O5]{o5}
+Google for Developers, \emph{Routes API Usage and Billing}, \url{https://developers.google.com/maps/documentation/routes/usage-and-billing}, erişim: 14 Mart 2026.
+
+\bibitem[O6]{o6}
+Google for Developers, \emph{Specify route features to avoid | Routes API}, \url{https://developers.google.com/maps/documentation/routes/route-modifiers}, erişim: 14 Mart 2026.
+
+\bibitem[O7]{o7}
+Valhalla Docs, \emph{Valhalla Overview}, \url{https://valhalla.github.io/valhalla/}, erişim: 14 Mart 2026.
+
+\bibitem[O8]{o8}
+Valhalla Docs, \emph{Dynamic Costing}, \url{https://valhalla.github.io/valhalla/sif/dynamic-costing/}, erişim: 14 Mart 2026.
+
+\bibitem[O9]{o9}
+Valhalla Docs, \emph{Overview of how routes are computed}, \url{https://valhalla.github.io/valhalla/route_overview/}, erişim: 14 Mart 2026.
+
+\bibitem[O10]{o10}
+Valhalla Docs, \emph{Map Matching API}, \url{https://valhalla.github.io/valhalla/api/map-matching/api-reference/}, erişim: 14 Mart 2026.
+
+\bibitem[O11]{o11}
+Valhalla Docs, \emph{Meili Algorithms}, \url{https://valhalla.github.io/valhalla/meili/algorithms/}, erişim: 14 Mart 2026.
+
+\bibitem[O12]{o12}
+Valhalla Docs, \emph{Elevation Lookup Service / Elevation API}, \url{https://valhalla.github.io/valhalla/elevation/}, \url{https://valhalla.github.io/valhalla/api/elevation/api-reference/}, erişim: 14 Mart 2026.
+
+\bibitem[O13]{o13}
+Valhalla GitHub, \emph{Discuss \& Add Motorcycle Costing Options \#1266}, \url{https://github.com/valhalla/valhalla/issues/1266}, erişim: 14 Mart 2026.
+
+\bibitem[O14]{o14}
+Project OSRM, \emph{OSRM official site}, \url{https://project-osrm.org/}, erişim: 14 Mart 2026.
+
+\bibitem[O15]{o15}
+REVER, \emph{Motorcycle Trip Planner, GPS Route Tracking App \& Riding Maps}, \url{https://www.rever.co/}, erişim: 14 Mart 2026.
+
+\bibitem[O16]{o16}
+RISER, \emph{RISER App / Route Planner}, \url{https://riserapp.com/en/}, \url{https://riserapp.com/routeplanner}, erişim: 14 Mart 2026.
+
+\bibitem[O17]{o17}
+calimoto, \emph{Motorcycle navigation and route planning}, \url{https://calimoto.com/en}, \url{https://calimoto.com/en/motorcycle-trip-planner}, erişim: 14 Mart 2026.
+
+\bibitem[O18]{o18}
+Strava, \emph{Strava main site and Clubs support}, \url{https://www.strava.com/}, \url{https://support.strava.com/hc/en-us/articles/216918347-Clubs-on-Strava}, erişim: 14 Mart 2026.
+
+\bibitem[O19]{o19}
+SUMO Documentation, \emph{SUMO User Documentation and Calibrator}, \url{https://sumo.dlr.de/docs/index.html}, \url{https://sumo.dlr.de/docs/Simulation/Calibrator.html}, erişim: 14 Mart 2026.
+
+\end{thebibliography}
+
+\end{document}

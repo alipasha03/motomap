@@ -43,3 +43,6 @@ website/routes/
 *.log
 *.out
 *.toc
+
+# Office temporary lock files
+~$*
