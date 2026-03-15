@@ -46,3 +46,6 @@ website/routes/
 
 # Office temporary lock files
 ~$*
+
+# Local BIGG archive
+tubitak_bigg_application/images.rar
