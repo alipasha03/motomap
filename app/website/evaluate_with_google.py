@@ -31,10 +31,11 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from motomap import GOOGLE_MAPS_API_KEY, motomap_graf_olustur
-from motomap.router import (
+from motomap.algorithm import (
     TRAVEL_TIME_ATTR,
     add_travel_time_to_graph,
     is_toll_edge,
+    mode_weight_attr,
     ucret_opsiyonlu_rota_hesapla,
 )
 
@@ -47,16 +48,10 @@ ACTIVE_BACKEND = "google"  # overridden by --backend flag
 ACTIVE_VALHALLA_BASE_URL = DEFAULT_VALHALLA_BASE_URL  # overridden by --valhalla-url
 
 
-def mode_weight_attr(mode: str) -> str:
-    return {
-        "standart": TRAVEL_TIME_ATTR,
-        "viraj_keyfi": "route_cost_viraj_keyfi_s",
-        "guvenli": "route_cost_guvenli_s",
-    }[mode]
-
-
 def nodes_to_coords(graph: nx.MultiDiGraph, node_ids: list[int]) -> list[dict]:
-    return [{"lat": graph.nodes[nid]["y"], "lng": graph.nodes[nid]["x"]} for nid in node_ids]
+    return [
+        {"lat": graph.nodes[nid]["y"], "lng": graph.nodes[nid]["x"]} for nid in node_ids
+    ]
 
 
 def decode_polyline(encoded: str) -> list[dict]:
@@ -75,7 +70,7 @@ def decode_polyline(encoded: str) -> list[dict]:
             shift += 5
             if b < 0x20:
                 break
-        lat += (~(result >> 1) if (result & 1) else (result >> 1))
+        lat += ~(result >> 1) if (result & 1) else (result >> 1)
 
         shift = 0
         result = 0
@@ -86,7 +81,7 @@ def decode_polyline(encoded: str) -> list[dict]:
             shift += 5
             if b < 0x20:
                 break
-        lng += (~(result >> 1) if (result & 1) else (result >> 1))
+        lng += ~(result >> 1) if (result & 1) else (result >> 1)
 
         points.append({"lat": lat / 1e5, "lng": lng / 1e5})
 
@@ -136,7 +131,7 @@ def decode_polyline6(encoded: str) -> list[dict]:
             shift += 5
             if b < 0x20:
                 break
-        lat += (~(result >> 1) if (result & 1) else (result >> 1))
+        lat += ~(result >> 1) if (result & 1) else (result >> 1)
         shift = 0
         result = 0
         while True:
@@ -146,7 +141,7 @@ def decode_polyline6(encoded: str) -> list[dict]:
             shift += 5
             if b < 0x20:
                 break
-        lng += (~(result >> 1) if (result & 1) else (result >> 1))
+        lng += ~(result >> 1) if (result & 1) else (result >> 1)
         points.append({"lat": lat / 1e6, "lng": lng / 1e6})
     return points
 
@@ -175,16 +170,28 @@ def fetch_valhalla_route(
                 continue
             if 500 <= resp.status_code < 600:
                 if attempt == max_retries - 1:
-                    return {"coordinates": [], "stats": {}, "status": f"HTTP_{resp.status_code}"}
+                    return {
+                        "coordinates": [],
+                        "stats": {},
+                        "status": f"HTTP_{resp.status_code}",
+                    }
                 time.sleep(1 + attempt)
                 continue
             if resp.status_code >= 400:
-                return {"coordinates": [], "stats": {}, "status": f"HTTP_{resp.status_code}"}
+                return {
+                    "coordinates": [],
+                    "stats": {},
+                    "status": f"HTTP_{resp.status_code}",
+                }
             try:
                 data = resp.json()
             except ValueError:
                 if attempt == max_retries - 1:
-                    return {"coordinates": [], "stats": {}, "status": "MALFORMED_RESPONSE"}
+                    return {
+                        "coordinates": [],
+                        "stats": {},
+                        "status": "MALFORMED_RESPONSE",
+                    }
                 time.sleep(1)
                 continue
             break
@@ -286,7 +293,9 @@ def find_diverse_path(
         return None
 
     for candidate in candidates:
-        if all(edge_overlap_ratio(candidate, used) <= max_overlap for used in used_paths):
+        if all(
+            edge_overlap_ratio(candidate, used) <= max_overlap for used in used_paths
+        ):
             return list(candidate)
         max_candidates -= 1
         if max_candidates <= 0:
@@ -319,11 +328,15 @@ def find_diverse_path_relaxed(
     return None
 
 
-def best_edge_data(graph: nx.MultiDiGraph, u: int, v: int, weight_attr: str) -> dict | None:
+def best_edge_data(
+    graph: nx.MultiDiGraph, u: int, v: int, weight_attr: str
+) -> dict | None:
     edges = graph.get_edge_data(u, v) or {}
     if not edges:
         return None
-    return min(edges.values(), key=lambda data: float(data.get(weight_attr, float("inf"))))
+    return min(
+        edges.values(), key=lambda data: float(data.get(weight_attr, float("inf")))
+    )
 
 
 def summarize_path(graph: nx.MultiDiGraph, nodes: list[int], weight_attr: str) -> dict:
@@ -337,7 +350,9 @@ def summarize_path(graph: nx.MultiDiGraph, nodes: list[int], weight_attr: str) -
     grades = []
 
     for idx in range(len(nodes) - 1):
-        edge = best_edge_data(graph, nodes[idx], nodes[idx + 1], weight_attr=weight_attr)
+        edge = best_edge_data(
+            graph, nodes[idx], nodes[idx + 1], weight_attr=weight_attr
+        )
         if edge is None:
             continue
 
@@ -417,7 +432,9 @@ def fp(coords: list[dict]) -> tuple[tuple[float, float], ...]:
     return tuple((round(p["lat"], 5), round(p["lng"], 5)) for p in coords)
 
 
-def safe_ratio(numerator: float | int | None, denominator: float | int | None) -> float | None:
+def safe_ratio(
+    numerator: float | int | None, denominator: float | int | None
+) -> float | None:
     if numerator is None or denominator is None:
         return None
     denom = float(denominator)
@@ -449,20 +466,17 @@ def evaluate_checks(route_doc: dict) -> tuple[dict[str, bool], dict]:
             len((modes.get(k) or {}).get("coordinates", [])) > 0 for k in MODES
         ),
         "modes_are_different": len(
-            {
-                fp((modes.get(k) or {}).get("coordinates", []))
-                for k in MODES
-            }
+            {fp((modes.get(k) or {}).get("coordinates", [])) for k in MODES}
         )
         == 3,
-        "safe_risk_le_standard": (safe.get("yuksek_risk", float("inf"))) <= (
-            std.get("yuksek_risk", float("-inf"))
-        ),
-        "viraj_fun_ge_standard": (vir.get("viraj_fun", float("-inf"))) >= (
-            std.get("viraj_fun", float("inf"))
-        ),
-        "std_distance_vs_baseline_ok": (dist_ratio is not None) and (0.7 <= dist_ratio <= 1.4),
-        "std_time_vs_baseline_ok": (time_ratio is not None) and (0.5 <= time_ratio <= 1.8),
+        "safe_risk_le_standard": (safe.get("yuksek_risk", float("inf")))
+        <= (std.get("yuksek_risk", float("-inf"))),
+        "viraj_fun_ge_standard": (vir.get("viraj_fun", float("-inf")))
+        >= (std.get("viraj_fun", float("inf"))),
+        "std_distance_vs_baseline_ok": (dist_ratio is not None)
+        and (0.7 <= dist_ratio <= 1.4),
+        "std_time_vs_baseline_ok": (time_ratio is not None)
+        and (0.5 <= time_ratio <= 1.8),
     }
 
     metrics = {
@@ -505,7 +519,14 @@ def summarize_case(label: str, checks: dict[str, bool], metrics: dict) -> dict:
         f"Standart sure_s={metrics.get('standart_sure_s')}, "
         f"time_ratio={time_ratio}"
     )
-    return {"label": label, "status": status, "score": score, "total": total, "checks": checks, "metrics": metrics}
+    return {
+        "label": label,
+        "status": status,
+        "score": score,
+        "total": total,
+        "checks": checks,
+        "metrics": metrics,
+    }
 
 
 def parse_float(value, name: str) -> float:
@@ -547,7 +568,9 @@ def load_pairs_file(path: Path) -> list[dict]:
             {
                 "label": label,
                 "origin": normalize_point(origin, prefix=f"{label}.origin."),
-                "destination": normalize_point(destination, prefix=f"{label}.destination."),
+                "destination": normalize_point(
+                    destination, prefix=f"{label}.destination."
+                ),
             }
         )
     return pairs
@@ -559,7 +582,10 @@ def haversine_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     radius_m = 6371000.0
     d_lat = radians(lat2 - lat1)
     d_lng = radians(lng2 - lng1)
-    a = sin(d_lat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(d_lng / 2) ** 2
+    a = (
+        sin(d_lat / 2) ** 2
+        + cos(radians(lat1)) * cos(radians(lat2)) * sin(d_lng / 2) ** 2
+    )
     return 2 * radius_m * asin(sqrt(a))
 
 
@@ -605,14 +631,19 @@ def sample_pairs_from_graph(
     return pairs
 
 
-def build_route_document(graph: nx.MultiDiGraph, origin: dict, destination: dict) -> dict:
+def build_route_document(
+    graph: nx.MultiDiGraph, origin: dict, destination: dict
+) -> dict:
     origin_node = ox.nearest_nodes(graph, origin["lng"], origin["lat"])
     destination_node = ox.nearest_nodes(graph, destination["lng"], destination["lat"])
 
     if origin_node == destination_node:
         raise ValueError("Origin and destination map to the same graph node.")
 
-    origin_actual = {"lat": graph.nodes[origin_node]["y"], "lng": graph.nodes[origin_node]["x"]}
+    origin_actual = {
+        "lat": graph.nodes[origin_node]["y"],
+        "lng": graph.nodes[origin_node]["x"],
+    }
     destination_actual = {
         "lat": graph.nodes[destination_node]["y"],
         "lng": graph.nodes[destination_node]["x"],
@@ -649,7 +680,9 @@ def build_route_document(graph: nx.MultiDiGraph, origin: dict, destination: dict
         mode_weight = mode_weight_attr(mode)
 
         if selected_paths:
-            max_current_overlap = max(edge_overlap_ratio(mode_nodes, p) for p in selected_paths)
+            max_current_overlap = max(
+                edge_overlap_ratio(mode_nodes, p) for p in selected_paths
+            )
             if max_current_overlap > 0.98:
                 alt_nodes = find_diverse_path(
                     graph,
@@ -672,7 +705,9 @@ def build_route_document(graph: nx.MultiDiGraph, origin: dict, destination: dict
                         allow_toll=True,
                     )
                     if relaxed_nodes is not None:
-                        selected = summarize_path(graph, relaxed_nodes, weight_attr=mode_weight)
+                        selected = summarize_path(
+                            graph, relaxed_nodes, weight_attr=mode_weight
+                        )
                         mode_nodes = relaxed_nodes
 
         if mode == "viraj_keyfi" and "standart" in result["modes"]:
@@ -819,7 +854,9 @@ def evaluate_batch(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Evaluate MOTOMAP outputs against a driving-directions baseline.")
+    parser = argparse.ArgumentParser(
+        description="Evaluate MOTOMAP outputs against a driving-directions baseline."
+    )
     parser.add_argument(
         "--route-json",
         default=str(DEFAULT_ROUTE_JSON),
@@ -846,7 +883,9 @@ def parse_args() -> argparse.Namespace:
         type=str,
         help="Optional JSON file with explicit O-D pairs.",
     )
-    parser.add_argument("--seed", type=int, default=42, help="Random seed for sampled O-D pairs.")
+    parser.add_argument(
+        "--seed", type=int, default=42, help="Random seed for sampled O-D pairs."
+    )
     parser.add_argument(
         "--min-distance-m",
         type=float,
@@ -895,7 +934,9 @@ def main() -> None:
     summary = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "backend": ACTIVE_BACKEND,
-        "valhalla_url": ACTIVE_VALHALLA_BASE_URL if ACTIVE_BACKEND == "valhalla" else None,
+        "valhalla_url": (
+            ACTIVE_VALHALLA_BASE_URL if ACTIVE_BACKEND == "valhalla" else None
+        ),
         "single": None,
         "batch": None,
     }
@@ -912,7 +953,9 @@ def main() -> None:
         if route_json_path.exists():
             summary["single"] = evaluate_single_route_json(route_json_path)
         else:
-            print(f"Single evaluation skipped: route json not found -> {route_json_path}")
+            print(
+                f"Single evaluation skipped: route json not found -> {route_json_path}"
+            )
 
     if args.batch > 0 or args.pairs_file:
         pairs_file = Path(args.pairs_file) if args.pairs_file else None
@@ -928,14 +971,18 @@ def main() -> None:
         )
 
     if summary["single"] is None and summary["batch"] is None:
-        raise SystemExit("Nothing to evaluate. Provide --generate, --batch, or a valid --route-json path.")
+        raise SystemExit(
+            "Nothing to evaluate. Provide --generate, --batch, or a valid --route-json path."
+        )
 
     if args.output_json:
         output_path = Path(args.output_json)
         if not output_path.is_absolute():
             output_path = script_dir / output_path
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+        output_path.write_text(
+            json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
         print(f"\nSaved summary: {output_path}")
 
 

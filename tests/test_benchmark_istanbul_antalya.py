@@ -7,8 +7,14 @@ import networkx as nx
 
 
 def _load_benchmark_module():
-    module_path = Path(__file__).resolve().parents[1] / "website" / "benchmark_istanbul_antalya_10k.py"
-    spec = importlib.util.spec_from_file_location("benchmark_istanbul_antalya_10k", module_path)
+    module_path = (
+        Path(__file__).resolve().parents[1]
+        / "website"
+        / "benchmark_istanbul_antalya_10k.py"
+    )
+    spec = importlib.util.spec_from_file_location(
+        "benchmark_istanbul_antalya_10k", module_path
+    )
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -70,8 +76,12 @@ def test_sample_pairs_are_region_valid_and_in_distance_range():
     assert len(identities) == len(pairs)
 
     for pair in pairs:
-        assert bench._node_inside_region(pair.origin.lat, pair.origin.lng, bench.ISTANBUL_REGION)
-        assert bench._node_inside_region(pair.destination.lat, pair.destination.lng, bench.ANTALYA_REGION)
+        assert bench._node_inside_region(
+            pair.origin.lat, pair.origin.lng, bench.ISTANBUL_REGION
+        )
+        assert bench._node_inside_region(
+            pair.destination.lat, pair.destination.lng, bench.ANTALYA_REGION
+        )
         assert 350_000.0 <= pair.crow_m <= 900_000.0
 
 
@@ -81,7 +91,9 @@ def test_filter_pairs_by_crow_reindexes_and_counts_drop():
         bench.ODPair(2, bench.Point(41.0, 29.0), bench.Point(36.9, 30.7), 120_000.0),
         bench.ODPair(3, bench.Point(41.0, 29.0), bench.Point(36.9, 30.7), 530_000.0),
     ]
-    filtered, dropped = bench.filter_pairs_by_crow(pairs, min_crow_m=300_000.0, max_crow_m=900_000.0)
+    filtered, dropped = bench.filter_pairs_by_crow(
+        pairs, min_crow_m=300_000.0, max_crow_m=900_000.0
+    )
     assert dropped == 1
     assert [p.case_id for p in filtered] == [1, 2]
     assert [p.crow_m for p in filtered] == [520_000.0, 530_000.0]
@@ -118,21 +130,33 @@ def test_evaluate_case_computes_ratios_and_ape(monkeypatch):
         bench,
         "fetch_google_directions",
         lambda **_: bench.make_backend_result(
-            enabled=True, success=True, status="OK", distance_m=600_000.0, duration_s=24_000.0
+            enabled=True,
+            success=True,
+            status="OK",
+            distance_m=600_000.0,
+            duration_s=24_000.0,
         ),
     )
     monkeypatch.setattr(
         bench,
         "fetch_valhalla_route",
         lambda **_: bench.make_backend_result(
-            enabled=True, success=True, status="OK", distance_m=615_000.0, duration_s=25_200.0
+            enabled=True,
+            success=True,
+            status="OK",
+            distance_m=615_000.0,
+            duration_s=25_200.0,
         ),
     )
     monkeypatch.setattr(
         bench,
         "run_motomap_route",
         lambda **_: bench.make_backend_result(
-            enabled=True, success=True, status="OK", distance_m=588_000.0, duration_s=22_800.0
+            enabled=True,
+            success=True,
+            status="OK",
+            distance_m=588_000.0,
+            duration_s=22_800.0,
         ),
     )
 

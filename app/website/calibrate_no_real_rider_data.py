@@ -90,7 +90,9 @@ def parse_csv_floats(raw: str, arg_name: str) -> list[float]:
     return values
 
 
-def validate_candidates(speed_factors: list[float], segment_delays: list[float]) -> None:
+def validate_candidates(
+    speed_factors: list[float], segment_delays: list[float]
+) -> None:
     for value in speed_factors:
         if not (MIN_SPEED_FACTOR <= value <= MAX_SPEED_FACTOR):
             raise ValueError(
@@ -165,7 +167,9 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_PLACE,
         help="Place string passed to evaluation script.",
     )
-    parser.add_argument("--seed", type=int, default=42, help="Random seed for O-D sampling.")
+    parser.add_argument(
+        "--seed", type=int, default=42, help="Random seed for O-D sampling."
+    )
     parser.add_argument(
         "--min-distance-m",
         type=float,
@@ -267,7 +271,9 @@ def truncate_tail(text: str, max_chars: int = 2000) -> str:
     return text[-max_chars:]
 
 
-def get_case_ratio(case: dict[str, Any], key_baseline: str, key_legacy: str) -> float | None:
+def get_case_ratio(
+    case: dict[str, Any], key_baseline: str, key_legacy: str
+) -> float | None:
     metrics = case.get("metrics")
     if not isinstance(metrics, dict):
         return None
@@ -337,7 +343,9 @@ def extract_aggregate_metrics(summary: dict[str, Any]) -> dict[str, Any]:
     return {
         "count_evaluated": count_evaluated,
         "full_pass": full_pass,
-        "full_pass_rate": (full_pass / count_evaluated) if count_evaluated > 0 else None,
+        "full_pass_rate": (
+            (full_pass / count_evaluated) if count_evaluated > 0 else None
+        ),
         "checks_per_case": checks_per_case,
         "total_checks": total_checks,
         "failed_checks": failed_checks,
@@ -390,7 +398,9 @@ def compute_objective(
     }
 
 
-def build_candidates(speed_factors: list[float], segment_delays: list[float]) -> list[Candidate]:
+def build_candidates(
+    speed_factors: list[float], segment_delays: list[float]
+) -> list[Candidate]:
     candidates: list[Candidate] = []
     index = 1
     for speed_factor in speed_factors:
@@ -478,7 +488,9 @@ def run_candidate(
         stderr_text = completed.stderr or ""
         if completed.returncode != 0:
             status = "subprocess_failed"
-            error_message = f"Evaluation subprocess exited with code {completed.returncode}."
+            error_message = (
+                f"Evaluation subprocess exited with code {completed.returncode}."
+            )
     except subprocess.TimeoutExpired as exc:
         status = "timeout"
         error_message = f"Timed out after {args.timeout_s} seconds."
@@ -559,7 +571,9 @@ def main() -> None:
         raise SystemExit(str(exc)) from exc
 
     if args.batch <= 0 and not args.pairs_file:
-        raise SystemExit("Provide --batch > 0 or --pairs-file so each candidate has evaluation data.")
+        raise SystemExit(
+            "Provide --batch > 0 or --pairs-file so each candidate has evaluation data."
+        )
     if args.min_distance_m <= 0:
         raise SystemExit("--min-distance-m must be > 0.")
     if args.max_distance_m <= args.min_distance_m:
@@ -587,7 +601,9 @@ def main() -> None:
         failed_run_penalty=float(args.failed_run_penalty),
     )
 
-    candidates = build_candidates(speed_factors=speed_factors, segment_delays=segment_delays)
+    candidates = build_candidates(
+        speed_factors=speed_factors, segment_delays=segment_delays
+    )
     print(f"Calibration candidates: {len(candidates)}")
     print(f"Evaluation script: {eval_script}")
 
@@ -670,7 +686,9 @@ def main() -> None:
         "results": results,
     }
 
-    output_json.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    output_json.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     print(f"Saved calibration report: {output_json}")
     if best:

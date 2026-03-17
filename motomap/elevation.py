@@ -6,9 +6,7 @@ import osmnx as ox
 
 logger = logging.getLogger(__name__)
 
-_OPEN_TOPO_URL = (
-    "https://api.opentopodata.org/v1/eudem25m?locations={locations}"
-)
+_OPEN_TOPO_URL = "https://api.opentopodata.org/v1/eudem25m?locations={locations}"
 _OPEN_TOPO_BATCH_SIZE = 100
 _OPEN_TOPO_PAUSE = 1.0
 _MAX_RETRIES = 3
@@ -26,7 +24,9 @@ def _try_google(G, api_key, retries=_MAX_RETRIES):
         except Exception as exc:
             logger.warning(
                 "Google Elevation attempt %d/%d failed: %s",
-                attempt, retries, exc,
+                attempt,
+                retries,
+                exc,
             )
     return None
 
@@ -47,7 +47,9 @@ def _try_opentopo(G, retries=_MAX_RETRIES):
         except Exception as exc:
             logger.warning(
                 "OpenTopo attempt %d/%d failed: %s",
-                attempt, retries, exc,
+                attempt,
+                retries,
+                exc,
             )
         finally:
             ox.settings.elevation_url_template = original_url

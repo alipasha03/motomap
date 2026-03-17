@@ -30,12 +30,16 @@ try:
     from rich.panel import Panel
     from rich.table import Table
 except ImportError as exc:  # pragma: no cover - runtime dependency guard
-    raise SystemExit("Missing dependency: rich. Install with `pip install rich tqdm`.") from exc
+    raise SystemExit(
+        "Missing dependency: rich. Install with `pip install rich tqdm`."
+    ) from exc
 
 try:
     from tqdm import tqdm
 except ImportError as exc:  # pragma: no cover - runtime dependency guard
-    raise SystemExit("Missing dependency: tqdm. Install with `pip install rich tqdm`.") from exc
+    raise SystemExit(
+        "Missing dependency: tqdm. Install with `pip install rich tqdm`."
+    ) from exc
 
 DEFAULT_SPEED_FACTORS = "0.40,0.50,0.60,0.70,0.80"
 DEFAULT_SEGMENT_DELAYS = "0.0,0.5,1.0,1.5,2.0"
@@ -101,7 +105,9 @@ def parse_csv_floats(raw: str, arg_name: str) -> list[float]:
     return values
 
 
-def validate_candidates(speed_factors: list[float], segment_delays: list[float]) -> None:
+def validate_candidates(
+    speed_factors: list[float], segment_delays: list[float]
+) -> None:
     for value in speed_factors:
         if not (MIN_SPEED_FACTOR <= value <= MAX_SPEED_FACTOR):
             raise ValueError(
@@ -284,7 +290,9 @@ def truncate_tail(text: str, max_chars: int = 2000) -> str:
     return text[-max_chars:]
 
 
-def get_case_ratio(case: dict[str, Any], key_baseline: str, key_legacy: str) -> float | None:
+def get_case_ratio(
+    case: dict[str, Any], key_baseline: str, key_legacy: str
+) -> float | None:
     metrics = case.get("metrics")
     if not isinstance(metrics, dict):
         return None
@@ -351,7 +359,9 @@ def extract_aggregate_metrics(summary: dict[str, Any]) -> dict[str, Any]:
     return {
         "count_evaluated": count_evaluated,
         "full_pass": full_pass,
-        "full_pass_rate": (full_pass / count_evaluated) if count_evaluated > 0 else None,
+        "full_pass_rate": (
+            (full_pass / count_evaluated) if count_evaluated > 0 else None
+        ),
         "checks_per_case": checks_per_case,
         "total_checks": total_checks,
         "failed_checks": failed_checks,
@@ -404,7 +414,9 @@ def compute_objective(
     }
 
 
-def build_candidates(speed_factors: list[float], segment_delays: list[float]) -> list[Candidate]:
+def build_candidates(
+    speed_factors: list[float], segment_delays: list[float]
+) -> list[Candidate]:
     candidates: list[Candidate] = []
     index = 1
     for speed_factor in speed_factors:
@@ -492,7 +504,9 @@ def run_candidate(
         stderr_text = completed.stderr or ""
         if completed.returncode != 0:
             status = "subprocess_failed"
-            error_message = f"Evaluation subprocess exited with code {completed.returncode}."
+            error_message = (
+                f"Evaluation subprocess exited with code {completed.returncode}."
+            )
     except subprocess.TimeoutExpired as exc:
         status = "timeout"
         error_message = f"Timed out after {args.timeout_s} seconds."
@@ -587,7 +601,9 @@ def build_setup_panel(
     artifacts_dir: Path | None,
     candidate_count: int,
 ) -> Panel:
-    artifacts_text = str(artifacts_dir) if keep_artifacts and artifacts_dir else "(temporary)"
+    artifacts_text = (
+        str(artifacts_dir) if keep_artifacts and artifacts_dir else "(temporary)"
+    )
     lines = [
         f"[bold]Place:[/bold] {args.place}",
         f"[bold]Candidates:[/bold] {candidate_count}",
@@ -631,7 +647,9 @@ def build_results_table(results: list[dict[str, Any]], top_k: int) -> Table:
 
     ranked = sort_results(results)[: max(1, top_k)]
     for rank, result in enumerate(ranked, start=1):
-        aggregate = result.get("aggregate") if isinstance(result.get("aggregate"), dict) else {}
+        aggregate = (
+            result.get("aggregate") if isinstance(result.get("aggregate"), dict) else {}
+        )
         failure_ratio = to_safe_float(aggregate.get("failure_ratio"))
         avg_time_mismatch = to_safe_float(aggregate.get("avg_time_mismatch"))
         avg_distance_mismatch = to_safe_float(aggregate.get("avg_distance_mismatch"))
@@ -685,7 +703,9 @@ def build_status_panel(
         lines.append("[bold]Best:[/bold] not available")
 
     border_style = "green" if success_count > 0 else "red"
-    return Panel.fit("\n".join(lines), title="Calibration Summary", border_style=border_style)
+    return Panel.fit(
+        "\n".join(lines), title="Calibration Summary", border_style=border_style
+    )
 
 
 def main() -> None:
@@ -701,7 +721,9 @@ def main() -> None:
         raise SystemExit(str(exc)) from exc
 
     if args.batch <= 0 and not args.pairs_file:
-        raise SystemExit("Provide --batch > 0 or --pairs-file so each candidate has evaluation data.")
+        raise SystemExit(
+            "Provide --batch > 0 or --pairs-file so each candidate has evaluation data."
+        )
     if args.min_distance_m <= 0:
         raise SystemExit("--min-distance-m must be > 0.")
     if args.max_distance_m <= args.min_distance_m:
@@ -731,10 +753,14 @@ def main() -> None:
         failed_run_penalty=float(args.failed_run_penalty),
     )
 
-    candidates = build_candidates(speed_factors=speed_factors, segment_delays=segment_delays)
+    candidates = build_candidates(
+        speed_factors=speed_factors, segment_delays=segment_delays
+    )
 
     keep_artifacts = bool(args.artifacts_dir)
-    artifacts_dir = resolve_path(args.artifacts_dir, script_dir) if keep_artifacts else None
+    artifacts_dir = (
+        resolve_path(args.artifacts_dir, script_dir) if keep_artifacts else None
+    )
     if artifacts_dir is not None:
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
@@ -750,13 +776,22 @@ def main() -> None:
     )
 
     if args.dry_run:
-        console.print(Panel.fit("Dry-run mode enabled. No subprocesses were executed.", border_style="yellow"))
+        console.print(
+            Panel.fit(
+                "Dry-run mode enabled. No subprocesses were executed.",
+                border_style="yellow",
+            )
+        )
         console.print(build_candidates_table(candidates))
         return
 
-    context = nullcontext(artifacts_dir) if keep_artifacts else TemporaryDirectory(
-        prefix="motomap_istanbul_calibration_",
-        dir=str(script_dir),
+    context = (
+        nullcontext(artifacts_dir)
+        if keep_artifacts
+        else TemporaryDirectory(
+            prefix="motomap_istanbul_calibration_",
+            dir=str(script_dir),
+        )
     )
 
     results: list[dict[str, Any]] = []
@@ -765,7 +800,9 @@ def main() -> None:
     with context as run_dir_ref:
         run_dir = Path(run_dir_ref)
 
-        for candidate in tqdm(candidates, desc="Evaluating candidates", unit="candidate"):
+        for candidate in tqdm(
+            candidates, desc="Evaluating candidates", unit="candidate"
+        ):
             result = run_candidate(
                 candidate=candidate,
                 eval_script=eval_script,
@@ -828,7 +865,9 @@ def main() -> None:
         "results": results,
     }
 
-    output_json.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    output_json.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     console.print(
         build_status_panel(

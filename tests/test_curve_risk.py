@@ -16,7 +16,9 @@ def test_analyze_linestring_curvature_detects_fun_turns():
             (3.0, 1.15),
         ]
     )
-    metrics = analyze_linestring_curvature(line, length_m=35.0, interpolation_step_m=10.0)
+    metrics = analyze_linestring_curvature(
+        line, length_m=35.0, interpolation_step_m=10.0
+    )
     assert metrics["fun_count"] > 0
     assert metrics["curvature_score"] > 0
 
@@ -30,7 +32,9 @@ def test_analyze_linestring_curvature_detects_danger_and_hairpin():
             (2.0, 1.0),
         ]
     )
-    metrics = analyze_linestring_curvature(line, length_m=15.0, interpolation_step_m=5.0)
+    metrics = analyze_linestring_curvature(
+        line, length_m=15.0, interpolation_step_m=5.0
+    )
     assert metrics["danger_count"] > 0
     assert metrics["hairpin_count"] > 0
 
@@ -98,4 +102,6 @@ def test_curvature_score_is_stable_for_repeated_pattern():
 
     assert short_metrics["curvature_score"] > 0
     assert long_metrics["curvature_score"] > 0
-    assert abs(short_metrics["curvature_score"] - long_metrics["curvature_score"]) < 0.25
+    assert (
+        abs(short_metrics["curvature_score"] - long_metrics["curvature_score"]) < 0.25
+    )

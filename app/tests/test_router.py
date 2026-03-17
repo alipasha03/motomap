@@ -43,7 +43,9 @@ def test_add_travel_time_to_graph_sets_edge_attribute():
 
 def test_add_travel_time_to_graph_uses_ferry_duration_when_present():
     graph = nx.MultiDiGraph()
-    graph.add_edge(1, 2, 0, route="ferry", motorcycle="yes", length=50_000, duration="00:15:00")
+    graph.add_edge(
+        1, 2, 0, route="ferry", motorcycle="yes", length=50_000, duration="00:15:00"
+    )
 
     add_travel_time_to_graph(graph)
 
@@ -99,26 +101,56 @@ def _build_graph_for_viraj_mode():
 
     # Route A (straighter, slightly faster in pure time)
     graph.add_edge(
-        1, 2, 0, length=1200, maxspeed=60, toll="no", grade=0.00,
-        geometry=LineString([(0.0, 0.0), (2.0, 0.0)])
+        1,
+        2,
+        0,
+        length=1200,
+        maxspeed=60,
+        toll="no",
+        grade=0.00,
+        geometry=LineString([(0.0, 0.0), (2.0, 0.0)]),
     )
     graph.add_edge(
-        2, 5, 0, length=1200, maxspeed=60, toll="no", grade=0.00,
-        geometry=LineString([(2.0, 0.0), (3.0, 0.0)])
+        2,
+        5,
+        0,
+        length=1200,
+        maxspeed=60,
+        toll="no",
+        grade=0.00,
+        geometry=LineString([(2.0, 0.0), (3.0, 0.0)]),
     )
 
     # Route B (more curvy, can win in viraj_keyfi mode)
     graph.add_edge(
-        1, 3, 0, length=1300, maxspeed=60, toll="no", grade=-0.01,
-        geometry=LineString([(0.0, 0.0), (0.6, 0.0), (1.0, 0.2)])
+        1,
+        3,
+        0,
+        length=1300,
+        maxspeed=60,
+        toll="no",
+        grade=-0.01,
+        geometry=LineString([(0.0, 0.0), (0.6, 0.0), (1.0, 0.2)]),
     )
     graph.add_edge(
-        3, 4, 0, length=1300, maxspeed=60, toll="no", grade=-0.01,
-        geometry=LineString([(1.0, 0.2), (1.4, 0.7), (2.2, 1.0)])
+        3,
+        4,
+        0,
+        length=1300,
+        maxspeed=60,
+        toll="no",
+        grade=-0.01,
+        geometry=LineString([(1.0, 0.2), (1.4, 0.7), (2.2, 1.0)]),
     )
     graph.add_edge(
-        4, 5, 0, length=400, maxspeed=60, toll="no", grade=-0.01,
-        geometry=LineString([(2.2, 1.0), (2.8, 0.4), (3.0, 0.0)])
+        4,
+        5,
+        0,
+        length=400,
+        maxspeed=60,
+        toll="no",
+        grade=-0.01,
+        geometry=LineString([(2.2, 1.0), (2.8, 0.4), (3.0, 0.0)]),
     )
     return graph
 
@@ -135,22 +167,46 @@ def _build_graph_for_guvenli_mode():
 
     # Risky downhill + sharp turns (shorter in raw time)
     graph.add_edge(
-        1, 2, 0, length=700, maxspeed=60, toll="no", grade=-0.12,
-        geometry=LineString([(0.0, 0.0), (0.5, 0.0), (0.5, 0.6)])
+        1,
+        2,
+        0,
+        length=700,
+        maxspeed=60,
+        toll="no",
+        grade=-0.12,
+        geometry=LineString([(0.0, 0.0), (0.5, 0.0), (0.5, 0.6)]),
     )
     graph.add_edge(
-        2, 4, 0, length=700, maxspeed=60, toll="no", grade=-0.12,
-        geometry=LineString([(0.5, 0.6), (1.0, 0.6), (1.0, 0.0)])
+        2,
+        4,
+        0,
+        length=700,
+        maxspeed=60,
+        toll="no",
+        grade=-0.12,
+        geometry=LineString([(0.5, 0.6), (1.0, 0.6), (1.0, 0.0)]),
     )
 
     # Safer route
     graph.add_edge(
-        1, 3, 0, length=1200, maxspeed=60, toll="no", grade=-0.01,
-        geometry=LineString([(0.0, 0.0), (0.5, 0.5), (1.0, 1.0)])
+        1,
+        3,
+        0,
+        length=1200,
+        maxspeed=60,
+        toll="no",
+        grade=-0.01,
+        geometry=LineString([(0.0, 0.0), (0.5, 0.5), (1.0, 1.0)]),
     )
     graph.add_edge(
-        3, 4, 0, length=1200, maxspeed=60, toll="no", grade=-0.01,
-        geometry=LineString([(1.0, 1.0), (1.6, 0.6), (2.0, 0.0)])
+        3,
+        4,
+        0,
+        length=1200,
+        maxspeed=60,
+        toll="no",
+        grade=-0.01,
+        geometry=LineString([(1.0, 1.0), (1.6, 0.6), (2.0, 0.0)]),
     )
     return graph
 

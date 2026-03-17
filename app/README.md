@@ -19,6 +19,7 @@ For the full project overview, architecture, and planning docs, start with the r
 Useful paths in this workspace:
 
 - [App docs](docs)
+- [Routing algorithm reference](docs/architecture/routing-algorithm-reference.md)
 - [Mobile app](mobile)
 - [Website](website)
 - [Python package](motomap)

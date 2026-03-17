@@ -1,12 +1,18 @@
 """MotoMap package public API."""
 
+from motomap.algorithm import (
+    DEFAULT_ALGORITHM_PROFILE,
+    EXCLUDED_HIGHWAY_TYPES,
+    RoutingAlgorithmProfile,
+    add_travel_time_to_graph,
+    filter_motorcycle_edges,
+    ucret_opsiyonlu_rota_hesapla,
+)
 from motomap.config import GOOGLE_MAPS_API_KEY
 from motomap.curve_risk import add_curve_and_risk_metrics, analyze_linestring_curvature
 from motomap.data_cleaner import clean_graph
 from motomap.data_loader import load_graph
 from motomap.elevation import add_elevation, add_grade
-from motomap.osm_validator import filter_motorcycle_edges, EXCLUDED_HIGHWAY_TYPES
-from motomap.router import ucret_opsiyonlu_rota_hesapla
 
 
 def motomap_graf_olustur(place: str, api_key: str | None = None):
@@ -32,8 +38,11 @@ def motomap_graf_olustur(place: str, api_key: str | None = None):
 __all__ = [
     "motomap_graf_olustur",
     "ucret_opsiyonlu_rota_hesapla",
+    "add_travel_time_to_graph",
     "add_curve_and_risk_metrics",
     "analyze_linestring_curvature",
     "filter_motorcycle_edges",
     "EXCLUDED_HIGHWAY_TYPES",
+    "DEFAULT_ALGORITHM_PROFILE",
+    "RoutingAlgorithmProfile",
 ]

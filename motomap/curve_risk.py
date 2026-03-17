@@ -166,19 +166,19 @@ def analyze_linestring_curvature(
     chunk_scores = []
     chunk_danger_scores = []
     for idx in range(0, angle_count, chunk_span):
-        chunk = significant_angles[idx: idx + chunk_span]
+        chunk = significant_angles[idx : idx + chunk_span]
         if chunk.size == 0:
             continue
-        chunk_fun = int(np.sum((chunk > FUN_ANGLE_MIN_DEG) & (chunk < FUN_ANGLE_MAX_DEG)))
+        chunk_fun = int(
+            np.sum((chunk > FUN_ANGLE_MIN_DEG) & (chunk < FUN_ANGLE_MAX_DEG))
+        )
         chunk_danger = int(np.sum(chunk > DANGER_ANGLE_DEG))
         chunk_fun_ratio = float(chunk_fun) / float(max(1, chunk.size))
         chunk_danger_ratio = float(chunk_danger) / float(max(1, chunk.size))
         chunk_scores.append(chunk_fun_ratio / (1.0 + chunk_danger_ratio))
         chunk_danger_scores.append(chunk_danger_ratio)
 
-    hairpin_count = (
-        danger_count if local_step_m <= hairpin_distance_threshold_m else 0
-    )
+    hairpin_count = danger_count if local_step_m <= hairpin_distance_threshold_m else 0
 
     # Chunk-normalized score reduces long-distance drift by averaging
     # local curvature behavior instead of accumulating globally.
@@ -224,9 +224,7 @@ def add_curve_and_risk_metrics(
             curvature_chunk_m=curvature_chunk_m,
         )
 
-        high_risk = (
-            metrics["hairpin_count"] > 0 and grade < RISKY_DOWNHILL_THRESHOLD
-        )
+        high_risk = metrics["hairpin_count"] > 0 and grade < RISKY_DOWNHILL_THRESHOLD
         data["viraj_aci_ortalama_deg"] = metrics["avg_angle_deg"]
         data["viraj_fun_sayisi"] = metrics["fun_count"]
         data["viraj_tehlike_sayisi"] = metrics["danger_count"]

@@ -13,7 +13,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from api.demo_route import DEMO_ROUTE
 
-ROUTE_FILE = Path(__file__).resolve().parent.parent / "website" / "public" / "routes" / "motomap_route.json"
+ROUTE_FILE = (
+    Path(__file__).resolve().parent.parent
+    / "website"
+    / "public"
+    / "routes"
+    / "motomap_route.json"
+)
 
 app = FastAPI(title="MOTOMAP API", version="1.0.0")
 

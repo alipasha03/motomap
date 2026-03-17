@@ -28,7 +28,9 @@ def _parse_args():
     parser.add_argument("--npz", required=True, help="Input NPZ file path")
     parser.add_argument("--output", required=True, help="Output image path (PNG)")
     parser.add_argument("--grid-size", type=int, default=220, help="Terrain grid size")
-    parser.add_argument("--z-scale", type=float, default=85.0, help="Vertical exaggeration")
+    parser.add_argument(
+        "--z-scale", type=float, default=85.0, help="Vertical exaggeration"
+    )
     return parser.parse_args(raw)
 
 
@@ -232,12 +234,16 @@ def _setup_scene(obj, output_path: Path):
     track.up_axis = "UP_Y"
 
     # Sun + fill light
-    bpy.ops.object.light_add(type="SUN", location=(cx + dist, cy - dist, cz + dist * 1.3))
+    bpy.ops.object.light_add(
+        type="SUN", location=(cx + dist, cy - dist, cz + dist * 1.3)
+    )
     sun = bpy.context.object
     sun.data.energy = 5.0
     sun.rotation_euler = (math.radians(40.0), math.radians(8.0), math.radians(35.0))
 
-    bpy.ops.object.light_add(type="AREA", location=(cx - dist * 0.4, cy + dist * 0.3, cz + dist * 0.6))
+    bpy.ops.object.light_add(
+        type="AREA", location=(cx - dist * 0.4, cy + dist * 0.3, cz + dist * 0.6)
+    )
     area = bpy.context.object
     area.data.energy = 420.0
     area.data.size = span * 0.7

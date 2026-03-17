@@ -1,70 +1,20 @@
-"""OSM edge filtering for motorcycle-legal routes."""
+"""Compatibility wrappers for motorcycle edge filtering."""
 
 from __future__ import annotations
 
 import networkx as nx
 
-EXCLUDED_HIGHWAY_TYPES: frozenset[str] = frozenset({
-    "cycleway",
-    "footway",
-    "pedestrian",
-    "path",
-    "steps",
-    "corridor",
-    "bridleway",
-    "track",
-})
-
-_EMERGENCY_ONLY_HIGHWAY_TYPES: frozenset[str] = frozenset({"emergency_bay"})
-_ACCESS_DENY_VALUES: frozenset[str] = frozenset({"no", "private", "emergency"})
-_EXCLUDED_SERVICE_TYPES: frozenset[str] = frozenset({
-    "parking_aisle",
-    "driveway",
-    "drive-through",
-    "emergency_access",
-})
-
-
-def _normalize_tag(value) -> str | None:
-    if value is None:
-        return None
-    if isinstance(value, list):
-        return _normalize_tag(value[0]) if value else None
-    return str(value).strip().lower()
-
-
-def _is_motorcycle_forbidden(data: dict) -> bool:
-    highway = _normalize_tag(data.get("highway"))
-    if highway in EXCLUDED_HIGHWAY_TYPES:
-        return True
-    if highway in _EMERGENCY_ONLY_HIGHWAY_TYPES:
-        return True
-    if highway == "service":
-        service = _normalize_tag(data.get("service"))
-        if service in _EXCLUDED_SERVICE_TYPES:
-            return True
-    access = _normalize_tag(data.get("access"))
-    if access in _ACCESS_DENY_VALUES:
-        return True
-    motor_vehicle = _normalize_tag(data.get("motor_vehicle"))
-    if motor_vehicle in _ACCESS_DENY_VALUES:
-        return True
-    motorcycle = _normalize_tag(data.get("motorcycle"))
-    if motorcycle in _ACCESS_DENY_VALUES:
-        return True
-    return False
+from motomap.algorithm import (
+    DEFAULT_ALGORITHM_PROFILE,
+    EXCLUDED_HIGHWAY_TYPES,
+    filter_motorcycle_edges as _filter_motorcycle_edges,
+    is_motorcycle_forbidden as _is_motorcycle_forbidden,
+    normalize_tag as _normalize_tag,
+)
 
 
 def filter_motorcycle_edges(graph: nx.MultiDiGraph) -> nx.MultiDiGraph:
-    """Remove edges that are not legal/suitable for motorcycles.
+    return _filter_motorcycle_edges(graph, profile=DEFAULT_ALGORITHM_PROFILE)
 
-    Filters out: cycleway, footway, pedestrian, path, steps,
-    corridor, bridleway, and edges with access=no or motor_vehicle=no.
-    """
-    keep = [
-        (u, v, k)
-        for u, v, k, data in graph.edges(keys=True, data=True)
-        if not _is_motorcycle_forbidden(data)
-    ]
-    filtered = graph.edge_subgraph(keep).copy()
-    return filtered
+
+__all__ = ["EXCLUDED_HIGHWAY_TYPES", "filter_motorcycle_edges"]

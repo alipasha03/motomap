@@ -1,5 +1,6 @@
 import networkx as nx
 import motomap
+from motomap.algorithm import DEFAULT_ALGORITHM_PROFILE
 
 
 def test_motomap_graf_olustur_pipeline_order(monkeypatch):
@@ -28,12 +29,16 @@ def test_motomap_graf_olustur_pipeline_order(monkeypatch):
         return g
 
     monkeypatch.setattr(motomap, "load_graph", fake_load_graph)
-    monkeypatch.setattr(motomap, "filter_motorcycle_edges", fake_filter_motorcycle_edges)
+    monkeypatch.setattr(
+        motomap, "filter_motorcycle_edges", fake_filter_motorcycle_edges
+    )
     monkeypatch.setattr(motomap, "add_elevation", fake_add_elevation)
     monkeypatch.setattr(motomap, "add_grade", fake_add_grade)
     monkeypatch.setattr(motomap, "clean_graph", fake_clean_graph)
 
-    result = motomap.motomap_graf_olustur("Kadikoy, Istanbul, Turkey", api_key="test-key")
+    result = motomap.motomap_graf_olustur(
+        "Kadikoy, Istanbul, Turkey", api_key="test-key"
+    )
 
     assert result is graph
     assert calls == [
@@ -63,3 +68,7 @@ def test_motomap_graf_olustur_uses_default_api_key(monkeypatch):
     motomap.motomap_graf_olustur("Moda, Istanbul, Turkey")
 
     assert calls == ["default-test-key"]
+
+
+def test_public_api_exposes_algorithm_profile():
+    assert motomap.DEFAULT_ALGORITHM_PROFILE == DEFAULT_ALGORITHM_PROFILE

@@ -22,8 +22,8 @@ from matplotlib import colors
 from matplotlib.collections import LineCollection
 
 from motomap import motomap_graf_olustur
+from motomap.algorithm import TRAVEL_TIME_ATTR, add_travel_time_to_graph, is_toll_edge
 from motomap.config import GOOGLE_MAPS_API_KEY
-from motomap.router import TRAVEL_TIME_ATTR, add_travel_time_to_graph, is_toll_edge
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -64,8 +64,12 @@ def _export_npz(graph, output_path: Path, place: str) -> Path:
     edge_rows = list(graph.edges(keys=True, data=True))
 
     node_ids = np.asarray([int(node_id) for node_id, _ in node_rows], dtype=np.int64)
-    node_x = np.asarray([float(data.get("x", np.nan)) for _, data in node_rows], dtype=float)
-    node_y = np.asarray([float(data.get("y", np.nan)) for _, data in node_rows], dtype=float)
+    node_x = np.asarray(
+        [float(data.get("x", np.nan)) for _, data in node_rows], dtype=float
+    )
+    node_y = np.asarray(
+        [float(data.get("y", np.nan)) for _, data in node_rows], dtype=float
+    )
     node_elevation = np.asarray(
         [float(data.get("elevation", np.nan)) for _, data in node_rows],
         dtype=float,
@@ -238,12 +242,7 @@ def run(
     graph = motomap_graf_olustur(place, api_key=resolved_key)
     add_travel_time_to_graph(graph)
 
-    safe_name = (
-        place.lower()
-        .replace(",", "")
-        .replace(" ", "_")
-        .replace("/", "_")
-    )
+    safe_name = place.lower().replace(",", "").replace(" ", "_").replace("/", "_")
     if basename:
         stem = basename
     else:

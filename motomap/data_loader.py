@@ -1,11 +1,15 @@
+"""OSM graph loading helpers that compose road and ferry layers."""
+
+from __future__ import annotations
+
 import logging
 
 import networkx as nx
 import osmnx as ox
 
+from motomap.algorithm import FERRY_CUSTOM_FILTER
 from motomap.config import NETWORK_TYPE
 
-FERRY_CUSTOM_FILTER = '["route"="ferry"]'
 logger = logging.getLogger(__name__)
 
 

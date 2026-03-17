@@ -1,4 +1,4 @@
-"""Generate MOTOMAP and Google routes for the comparison website."""
+"""Generate a multi-case MotoMap comparison suite for the website."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ import networkx as nx
 import osmnx as ox
 import requests
 
-# Windows terminal fallback: avoid UnicodeEncodeError on non-UTF8 code pages.
 if hasattr(sys.stdout, "reconfigure"):
     try:
         sys.stdout.reconfigure(encoding="utf-8")
@@ -19,40 +18,34 @@ if hasattr(sys.stdout, "reconfigure"):
     except Exception:
         pass
 
-# Add project root to path so we can import motomap
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from motomap import GOOGLE_MAPS_API_KEY, motomap_graf_olustur
-from motomap.router import (
+from motomap.algorithm import (
     TRAVEL_TIME_ATTR,
     add_travel_time_to_graph,
     is_toll_edge,
+    mode_weight_attr,
     ucret_opsiyonlu_rota_hesapla,
 )
+from website.comparison_suite import (
+    DEFAULT_CASE_DEFINITIONS,
+    MODES,
+    build_case_evidence,
+    build_suite_summary,
+)
 
-# --- Configuration ---
-PLACE = "Kadıköy, İstanbul, Turkey"
-ORIGIN = (40.9923, 29.0239)  # Kadıköy İskele
-DESTINATION = (40.9700, 29.0380)  # Kalamış Parkı
-MODES = ["standart", "viraj_keyfi", "guvenli"]
+PLACE = "Kadikoy, Istanbul, Turkey"
 OUTPUT_DIR = Path(__file__).resolve().parent / "routes"
 
 
-def mode_weight_attr(mode: str) -> str:
-    return {
-        "standart": TRAVEL_TIME_ATTR,
-        "viraj_keyfi": "route_cost_viraj_keyfi_s",
-        "guvenli": "route_cost_guvenli_s",
-    }[mode]
-
-
-def nodes_to_coords(graph: nx.MultiDiGraph, node_ids: list) -> list[dict]:
-    """Convert node IDs to [{lat, lng}, ...]."""
-    return [{"lat": graph.nodes[nid]["y"], "lng": graph.nodes[nid]["x"]} for nid in node_ids]
+def nodes_to_coords(graph: nx.MultiDiGraph, node_ids: list[int]) -> list[dict]:
+    return [
+        {"lat": graph.nodes[nid]["y"], "lng": graph.nodes[nid]["x"]} for nid in node_ids
+    ]
 
 
 def decode_polyline(encoded: str) -> list[dict]:
-    """Decode an encoded polyline."""
     points = []
     index = 0
     lat = 0
@@ -68,7 +61,7 @@ def decode_polyline(encoded: str) -> list[dict]:
             shift += 5
             if b < 0x20:
                 break
-        lat += (~(result >> 1) if (result & 1) else (result >> 1))
+        lat += ~(result >> 1) if (result & 1) else (result >> 1)
 
         shift = 0
         result = 0
@@ -79,15 +72,17 @@ def decode_polyline(encoded: str) -> list[dict]:
             shift += 5
             if b < 0x20:
                 break
-        lng += (~(result >> 1) if (result & 1) else (result >> 1))
+        lng += ~(result >> 1) if (result & 1) else (result >> 1)
 
         points.append({"lat": lat / 1e5, "lng": lng / 1e5})
 
     return points
 
 
-def fetch_google_route(origin: dict, destination: dict, api_key: str) -> dict:
-    """Fetch Google route coordinates + distance/time stats."""
+def fetch_google_route(origin: dict, destination: dict, api_key: str | None) -> dict:
+    if not api_key:
+        return {"coordinates": [], "stats": {}, "status": "MISSING_API_KEY"}
+
     url = "https://maps.googleapis.com/maps/api/directions/json"
     params = {
         "origin": f"{origin['lat']},{origin['lng']}",
@@ -95,11 +90,14 @@ def fetch_google_route(origin: dict, destination: dict, api_key: str) -> dict:
         "mode": "driving",
         "key": api_key,
     }
-    data = requests.get(url, params=params, timeout=30).json()
+
+    try:
+        data = requests.get(url, params=params, timeout=30).json()
+    except requests.RequestException:
+        return {"coordinates": [], "stats": {}, "status": "REQUEST_ERROR"}
 
     if data.get("status") != "OK":
-        print(f"  Google Directions API error: {data.get('status', 'UNKNOWN')}")
-        return {"coordinates": [], "stats": {}}
+        return {"coordinates": [], "stats": {}, "status": data.get("status", "UNKNOWN")}
 
     route = data["routes"][0]
     leg = route["legs"][0]
@@ -111,14 +109,15 @@ def fetch_google_route(origin: dict, destination: dict, api_key: str) -> dict:
             "sure_s": leg["duration"]["value"],
             "sure_text": leg["duration"]["text"],
         },
+        "status": "OK",
     }
 
 
-def edge_pairs(nodes: list) -> set[tuple]:
+def edge_pairs(nodes: list[int]) -> set[tuple[int, int]]:
     return set(zip(nodes, nodes[1:]))
 
 
-def edge_overlap_ratio(path_a: list, path_b: list) -> float:
+def edge_overlap_ratio(path_a: list[int], path_b: list[int]) -> float:
     edges_a = edge_pairs(path_a)
     edges_b = edge_pairs(path_b)
     if not edges_a or not edges_b:
@@ -133,7 +132,6 @@ def build_weighted_digraph(
     weight_attr: str,
     allow_toll: bool = True,
 ) -> nx.DiGraph:
-    """Convert MultiDiGraph to DiGraph with min edge weight per direction."""
     dg = nx.DiGraph()
     for u, v, _, data in graph.edges(keys=True, data=True):
         if not allow_toll and is_toll_edge(data):
@@ -154,12 +152,11 @@ def find_diverse_path(
     source: int,
     target: int,
     weight_attr: str,
-    used_paths: list[list],
+    used_paths: list[list[int]],
     allow_toll: bool = True,
     max_candidates: int = 40,
     max_overlap: float = 0.86,
-) -> list | None:
-    """Find a low-cost path that is meaningfully different from existing paths."""
+) -> list[int] | None:
     dg = build_weighted_digraph(graph, weight_attr=weight_attr, allow_toll=allow_toll)
     if source not in dg or target not in dg:
         return None
@@ -170,8 +167,10 @@ def find_diverse_path(
         return None
 
     for candidate in itertools.islice(candidates, max_candidates):
-        if all(edge_overlap_ratio(candidate, used) <= max_overlap for used in used_paths):
-            return candidate
+        if all(
+            edge_overlap_ratio(candidate, used) <= max_overlap for used in used_paths
+        ):
+            return list(candidate)
     return None
 
 
@@ -180,10 +179,9 @@ def find_diverse_path_relaxed(
     source: int,
     target: int,
     weight_attr: str,
-    used_paths: list[list],
+    used_paths: list[list[int]],
     allow_toll: bool = True,
-) -> list | None:
-    """Try strict-to-relaxed diversity thresholds to avoid identical mode outputs."""
+) -> list[int] | None:
     for overlap in (0.86, 0.92, 0.97, 0.995):
         alt = find_diverse_path(
             graph,
@@ -200,7 +198,9 @@ def find_diverse_path_relaxed(
     return None
 
 
-def best_edge_data(graph: nx.MultiDiGraph, u: int, v: int, weight_attr: str) -> dict | None:
+def best_edge_data(
+    graph: nx.MultiDiGraph, u: int, v: int, weight_attr: str
+) -> dict | None:
     edges = graph.get_edge_data(u, v) or {}
     if not edges:
         return None
@@ -210,7 +210,7 @@ def best_edge_data(graph: nx.MultiDiGraph, u: int, v: int, weight_attr: str) -> 
     )
 
 
-def summarize_path(graph: nx.MultiDiGraph, nodes: list, weight_attr: str) -> dict:
+def summarize_path(graph: nx.MultiDiGraph, nodes: list[int], weight_attr: str) -> dict:
     total_cost = 0.0
     total_time = 0.0
     total_length = 0.0
@@ -221,7 +221,7 @@ def summarize_path(graph: nx.MultiDiGraph, nodes: list, weight_attr: str) -> dic
     grades = []
 
     for idx in range(len(nodes) - 1):
-        edge = best_edge_data(graph, nodes[idx], nodes[idx + 1], weight_attr=weight_attr)
+        edge = best_edge_data(graph, nodes[idx], nodes[idx + 1], weight_attr)
         if edge is None:
             continue
 
@@ -256,8 +256,7 @@ def find_fun_richer_path(
     base_time_s: float,
     max_candidates: int = 80,
     max_time_multiplier: float = 2.2,
-) -> tuple[dict, list] | None:
-    """Try to find an alternative viraj route with equal/higher fun score."""
+) -> tuple[dict, list[int]] | None:
     dg = build_weighted_digraph(graph, weight_attr=weight_attr, allow_toll=True)
     if source not in dg or target not in dg:
         return None
@@ -272,7 +271,7 @@ def find_fun_richer_path(
     best_fun = -1
 
     for candidate in itertools.islice(candidates, max_candidates):
-        summary = summarize_path(graph, candidate, weight_attr=weight_attr)
+        summary = summarize_path(graph, list(candidate), weight_attr=weight_attr)
         if summary["toplam_sure_s"] > float(base_time_s) * max_time_multiplier:
             continue
 
@@ -289,45 +288,45 @@ def find_fun_richer_path(
     return best_summary, best_nodes
 
 
-def main() -> None:
-    print(f"Graf olusturuluyor: {PLACE}")
-    graph = motomap_graf_olustur(PLACE)
-    graph = add_travel_time_to_graph(graph)
+def build_case_document(graph: nx.MultiDiGraph, case_def: dict) -> dict:
+    origin = case_def["origin"]
+    destination = case_def["destination"]
+    origin_node = ox.nearest_nodes(graph, origin["lng"], origin["lat"])
+    destination_node = ox.nearest_nodes(graph, destination["lng"], destination["lat"])
 
-    origin_node = ox.nearest_nodes(graph, ORIGIN[1], ORIGIN[0])
-    destination_node = ox.nearest_nodes(graph, DESTINATION[1], DESTINATION[0])
-
-    origin_actual = {"lat": graph.nodes[origin_node]["y"], "lng": graph.nodes[origin_node]["x"]}
+    origin_actual = {
+        "lat": graph.nodes[origin_node]["y"],
+        "lng": graph.nodes[origin_node]["x"],
+    }
     destination_actual = {
         "lat": graph.nodes[destination_node]["y"],
         "lng": graph.nodes[destination_node]["x"],
     }
 
-    print(f"Baslangic: {origin_actual}")
-    print(f"Varis: {destination_actual}")
-
-    print("Google rotasi aliniyor...")
-    google_data = fetch_google_route(origin_actual, destination_actual, GOOGLE_MAPS_API_KEY)
-    print(
-        f"  -> {len(google_data['coordinates'])} nokta, "
-        f"{google_data['stats'].get('mesafe_text', '?')}, "
-        f"{google_data['stats'].get('sure_text', '?')}"
+    google_data = fetch_google_route(
+        origin_actual, destination_actual, GOOGLE_MAPS_API_KEY
     )
 
     result = {
+        "case_id": case_def["case_id"],
+        "label": case_def["label"],
         "origin": origin_actual,
         "destination": destination_actual,
-        "origin_label": "Kadikoy Iskele",
-        "destination_label": "Kalamis Parki",
+        "origin_label": case_def["origin_label"],
+        "destination_label": case_def["destination_label"],
+        "baseline_backend": "google",
+        "baseline_route": google_data["coordinates"],
+        "baseline_stats": google_data["stats"],
+        "baseline_status": google_data["status"],
         "google_route": google_data["coordinates"],
         "google_stats": google_data["stats"],
+        "google_status": google_data["status"],
         "modes": {},
     }
 
-    selected_paths: list[list] = []
+    selected_paths: list[list[int]] = []
 
     for mode in MODES:
-        print(f"Rota hesaplaniyor: {mode}")
         route = ucret_opsiyonlu_rota_hesapla(
             graph,
             source=origin_node,
@@ -341,7 +340,9 @@ def main() -> None:
         mode_weight = mode_weight_attr(mode)
 
         if selected_paths:
-            max_current_overlap = max(edge_overlap_ratio(mode_nodes, p) for p in selected_paths)
+            max_current_overlap = max(
+                edge_overlap_ratio(mode_nodes, path) for path in selected_paths
+            )
             if max_current_overlap > 0.98:
                 alt_nodes = find_diverse_path(
                     graph,
@@ -354,10 +355,6 @@ def main() -> None:
                 if alt_nodes is not None:
                     selected = summarize_path(graph, alt_nodes, weight_attr=mode_weight)
                     mode_nodes = alt_nodes
-                    print(
-                        f"  -> Diversified fallback secildi ({len(mode_nodes)} nokta, "
-                        f"overlap {max_current_overlap:.2f})"
-                    )
                 else:
                     relaxed_nodes = find_diverse_path_relaxed(
                         graph,
@@ -368,12 +365,10 @@ def main() -> None:
                         allow_toll=True,
                     )
                     if relaxed_nodes is not None:
-                        selected = summarize_path(graph, relaxed_nodes, weight_attr=mode_weight)
-                        mode_nodes = relaxed_nodes
-                        print(
-                            f"  -> Relaxed diversity fallback secildi ({len(mode_nodes)} nokta, "
-                            f"overlap hedefi gevsetildi)"
+                        selected = summarize_path(
+                            graph, relaxed_nodes, weight_attr=mode_weight
                         )
+                        mode_nodes = relaxed_nodes
 
         if mode == "viraj_keyfi" and "standart" in result["modes"]:
             standard_fun = int(result["modes"]["standart"]["stats"]["viraj_fun"])
@@ -389,16 +384,10 @@ def main() -> None:
                 )
                 if richer is not None:
                     selected, mode_nodes = richer
-                    print(
-                        f"  -> Fun fallback secildi (viraj_fun: {current_fun} -> "
-                        f"{selected['viraj_fun_sayisi']}, hedef >= {standard_fun})"
-                    )
 
         selected_paths.append(mode_nodes)
-        coords = nodes_to_coords(graph, mode_nodes)
-
         result["modes"][mode] = {
-            "coordinates": coords,
+            "coordinates": nodes_to_coords(graph, mode_nodes),
             "stats": {
                 "mesafe_m": round(selected["toplam_mesafe_m"], 1),
                 "sure_s": round(selected["toplam_sure_s"], 1),
@@ -409,17 +398,69 @@ def main() -> None:
                 "ucretli": selected["ucretli_yol_iceriyor"],
             },
         }
+
+    result["evidence"] = build_case_evidence(result)
+    return result
+
+
+def build_legacy_route_payload(case_doc: dict) -> dict:
+    payload = {
+        key: value
+        for key, value in case_doc.items()
+        if key
+        not in {
+            "case_id",
+            "label",
+            "baseline_backend",
+            "baseline_route",
+            "baseline_stats",
+            "baseline_status",
+            "evidence",
+        }
+    }
+    payload["google_route"] = case_doc.get("baseline_route", [])
+    payload["google_stats"] = case_doc.get("baseline_stats", {})
+    return payload
+
+
+def main() -> None:
+    print(f"Graf olusturuluyor: {PLACE}")
+    graph = motomap_graf_olustur(PLACE)
+    graph = add_travel_time_to_graph(graph)
+
+    cases = []
+    for idx, case_def in enumerate(DEFAULT_CASE_DEFINITIONS, start=1):
+        print(f"[{idx}/{len(DEFAULT_CASE_DEFINITIONS)}] {case_def['label']}")
+        case_doc = build_case_document(graph, case_def)
+        evidence = case_doc["evidence"]
         print(
-            f"  -> {len(coords)} nokta, {selected['toplam_mesafe_m']:.0f}m, "
-            f"{selected['toplam_sure_s']:.0f}s"
+            f"  -> verdict={evidence['verdict']} score={evidence['score']}/{evidence['total']}"
         )
+        cases.append(case_doc)
+
+    summary = build_suite_summary(cases)
+    suite = {
+        "generated_at": summary["generated_at"],
+        "place": PLACE,
+        "baseline_backend": "google",
+        "cases": cases,
+        "summary": summary,
+    }
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    output_path = OUTPUT_DIR / "motomap_route.json"
-    with output_path.open("w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+    suite_path = OUTPUT_DIR / "comparison_suite.json"
+    suite_path.write_text(
+        json.dumps(suite, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
-    print(f"\nRota JSON kaydedildi: {output_path}")
+    legacy_path = OUTPUT_DIR / "motomap_route.json"
+    legacy_path.write_text(
+        json.dumps(build_legacy_route_payload(cases[0]), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    print(f"\nSuite kaydedildi: {suite_path}")
+    print(f"Legacy route kaydedildi: {legacy_path}")
 
 
 if __name__ == "__main__":

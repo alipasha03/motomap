@@ -23,10 +23,11 @@ if hasattr(sys.stdout, "reconfigure"):
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from motomap import GOOGLE_MAPS_API_KEY, motomap_graf_olustur
-from motomap.router import (
+from motomap.algorithm import (
     TRAVEL_TIME_ATTR,
     add_travel_time_to_graph,
     is_toll_edge,
+    mode_weight_attr,
     ucret_opsiyonlu_rota_hesapla,
 )
 
@@ -38,17 +39,11 @@ MODES = ["standart", "viraj_keyfi", "guvenli"]
 OUTPUT_DIR = Path(__file__).resolve().parent / "routes"
 
 
-def mode_weight_attr(mode: str) -> str:
-    return {
-        "standart": TRAVEL_TIME_ATTR,
-        "viraj_keyfi": "route_cost_viraj_keyfi_s",
-        "guvenli": "route_cost_guvenli_s",
-    }[mode]
-
-
 def nodes_to_coords(graph: nx.MultiDiGraph, node_ids: list) -> list[dict]:
     """Convert node IDs to [{lat, lng}, ...]."""
-    return [{"lat": graph.nodes[nid]["y"], "lng": graph.nodes[nid]["x"]} for nid in node_ids]
+    return [
+        {"lat": graph.nodes[nid]["y"], "lng": graph.nodes[nid]["x"]} for nid in node_ids
+    ]
 
 
 def decode_polyline(encoded: str) -> list[dict]:
@@ -68,7 +63,7 @@ def decode_polyline(encoded: str) -> list[dict]:
             shift += 5
             if b < 0x20:
                 break
-        lat += (~(result >> 1) if (result & 1) else (result >> 1))
+        lat += ~(result >> 1) if (result & 1) else (result >> 1)
 
         shift = 0
         result = 0
@@ -79,7 +74,7 @@ def decode_polyline(encoded: str) -> list[dict]:
             shift += 5
             if b < 0x20:
                 break
-        lng += (~(result >> 1) if (result & 1) else (result >> 1))
+        lng += ~(result >> 1) if (result & 1) else (result >> 1)
 
         points.append({"lat": lat / 1e5, "lng": lng / 1e5})
 
@@ -170,7 +165,9 @@ def find_diverse_path(
         return None
 
     for candidate in itertools.islice(candidates, max_candidates):
-        if all(edge_overlap_ratio(candidate, used) <= max_overlap for used in used_paths):
+        if all(
+            edge_overlap_ratio(candidate, used) <= max_overlap for used in used_paths
+        ):
             return candidate
     return None
 
@@ -200,7 +197,9 @@ def find_diverse_path_relaxed(
     return None
 
 
-def best_edge_data(graph: nx.MultiDiGraph, u: int, v: int, weight_attr: str) -> dict | None:
+def best_edge_data(
+    graph: nx.MultiDiGraph, u: int, v: int, weight_attr: str
+) -> dict | None:
     edges = graph.get_edge_data(u, v) or {}
     if not edges:
         return None
@@ -221,7 +220,9 @@ def summarize_path(graph: nx.MultiDiGraph, nodes: list, weight_attr: str) -> dic
     grades = []
 
     for idx in range(len(nodes) - 1):
-        edge = best_edge_data(graph, nodes[idx], nodes[idx + 1], weight_attr=weight_attr)
+        edge = best_edge_data(
+            graph, nodes[idx], nodes[idx + 1], weight_attr=weight_attr
+        )
         if edge is None:
             continue
 
@@ -297,7 +298,10 @@ def main() -> None:
     origin_node = ox.nearest_nodes(graph, ORIGIN[1], ORIGIN[0])
     destination_node = ox.nearest_nodes(graph, DESTINATION[1], DESTINATION[0])
 
-    origin_actual = {"lat": graph.nodes[origin_node]["y"], "lng": graph.nodes[origin_node]["x"]}
+    origin_actual = {
+        "lat": graph.nodes[origin_node]["y"],
+        "lng": graph.nodes[origin_node]["x"],
+    }
     destination_actual = {
         "lat": graph.nodes[destination_node]["y"],
         "lng": graph.nodes[destination_node]["x"],
@@ -307,7 +311,9 @@ def main() -> None:
     print(f"Varis: {destination_actual}")
 
     print("Google rotasi aliniyor...")
-    google_data = fetch_google_route(origin_actual, destination_actual, GOOGLE_MAPS_API_KEY)
+    google_data = fetch_google_route(
+        origin_actual, destination_actual, GOOGLE_MAPS_API_KEY
+    )
     print(
         f"  -> {len(google_data['coordinates'])} nokta, "
         f"{google_data['stats'].get('mesafe_text', '?')}, "
@@ -341,7 +347,9 @@ def main() -> None:
         mode_weight = mode_weight_attr(mode)
 
         if selected_paths:
-            max_current_overlap = max(edge_overlap_ratio(mode_nodes, p) for p in selected_paths)
+            max_current_overlap = max(
+                edge_overlap_ratio(mode_nodes, p) for p in selected_paths
+            )
             if max_current_overlap > 0.98:
                 alt_nodes = find_diverse_path(
                     graph,
@@ -368,7 +376,9 @@ def main() -> None:
                         allow_toll=True,
                     )
                     if relaxed_nodes is not None:
-                        selected = summarize_path(graph, relaxed_nodes, weight_attr=mode_weight)
+                        selected = summarize_path(
+                            graph, relaxed_nodes, weight_attr=mode_weight
+                        )
                         mode_nodes = relaxed_nodes
                         print(
                             f"  -> Relaxed diversity fallback secildi ({len(mode_nodes)} nokta, "

@@ -22,11 +22,17 @@ OUTPUT_DIR = ROOT / "outputs" / "pdf"
 
 PDF_SPECS = [
     ("docs/architecture/motomap_rapor.md", "motomap_rapor_en.pdf"),
-    ("docs/issue_4/motomap_yokus_ve_viraj_Algoritmasi.md", "motomap_yokus_ve_viraj_Algoritmasi_issue4_en.pdf"),
+    (
+        "docs/issue_4/motomap_yokus_ve_viraj_Algoritmasi.md",
+        "motomap_yokus_ve_viraj_Algoritmasi_issue4_en.pdf",
+    ),
     ("docs/issue_4/issue4.md", "issue4_index_en.pdf"),
     ("docs/research_suggestion/Ali_Ozuysal_Projesi.md", "Ali_Ozuysal_Projesi_en.pdf"),
     ("docs/research_suggestion/MOTOMAP_YOKUS.md", "MOTOMAP_YOKUS_en.pdf"),
-    ("docs/research_suggestion/motomap_yokus_ve_viraj_Algoritmasi.md", "motomap_yokus_ve_viraj_Algoritmasi_research_en.pdf"),
+    (
+        "docs/research_suggestion/motomap_yokus_ve_viraj_Algoritmasi.md",
+        "motomap_yokus_ve_viraj_Algoritmasi_research_en.pdf",
+    ),
 ]
 
 
@@ -142,7 +148,9 @@ def _table_from_lines(lines: list[str], styles) -> Table:
         if re.fullmatch(r"\|?[\-\:\s|]+\|?", stripped):
             continue
         cells = [cell.strip() for cell in stripped.strip("|").split("|")]
-        rows.append([Paragraph(_clean_inline_markdown(cell), styles["body"]) for cell in cells])
+        rows.append(
+            [Paragraph(_clean_inline_markdown(cell), styles["body"]) for cell in cells]
+        )
 
     if not rows:
         rows = [[Paragraph("", styles["body"])]]
@@ -171,7 +179,9 @@ def _add_page_number(canvas, doc):
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(colors.HexColor("#5f6b73"))
     canvas.drawString(doc.leftMargin, 18, _repair_text(doc.title))
-    canvas.drawRightString(A4[0] - doc.rightMargin, 18, f"Page {canvas.getPageNumber()}")
+    canvas.drawRightString(
+        A4[0] - doc.rightMargin, 18, f"Page {canvas.getPageNumber()}"
+    )
     canvas.restoreState()
 
 
@@ -255,7 +265,9 @@ def _render_markdown(source_path: Path, output_path: Path) -> None:
         if stripped.startswith("# "):
             flush_paragraph()
             title = _repair_text(stripped[2:].strip())
-            story.append(Paragraph(_clean_inline_markdown(stripped[2:]), styles["title"]))
+            story.append(
+                Paragraph(_clean_inline_markdown(stripped[2:]), styles["title"])
+            )
             continue
 
         if stripped.startswith("## "):
@@ -286,10 +298,14 @@ def _render_markdown(source_path: Path, output_path: Path) -> None:
     flush_block()
 
     if not story:
-        story.append(Paragraph(_clean_inline_markdown(source_path.name), styles["title"]))
+        story.append(
+            Paragraph(_clean_inline_markdown(source_path.name), styles["title"])
+        )
 
     meta = Paragraph(
-        _clean_inline_markdown(f"English PDF generated from {source_path.relative_to(ROOT)}"),
+        _clean_inline_markdown(
+            f"English PDF generated from {source_path.relative_to(ROOT)}"
+        ),
         styles["meta"],
     )
     story.insert(1, meta)

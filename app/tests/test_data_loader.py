@@ -62,8 +62,14 @@ def test_load_graph_composes_ferry_edges_when_requested(monkeypatch):
 
     graph = data_loader.load_graph("Kadikoy, Istanbul, Turkey")
 
-    assert any(custom_filter == data_loader.FERRY_CUSTOM_FILTER for _, _, custom_filter in calls)
-    assert any(data.get("route") == "ferry" for _, _, _, data in graph.edges(keys=True, data=True))
+    assert any(
+        custom_filter == data_loader.FERRY_CUSTOM_FILTER
+        for _, _, custom_filter in calls
+    )
+    assert any(
+        data.get("route") == "ferry"
+        for _, _, _, data in graph.edges(keys=True, data=True)
+    )
 
 
 def test_load_graph_returns_road_graph_when_ferry_query_fails(monkeypatch):
@@ -81,4 +87,7 @@ def test_load_graph_returns_road_graph_when_ferry_query_fails(monkeypatch):
     graph = data_loader.load_graph("Kadikoy, Istanbul, Turkey")
 
     assert graph.number_of_edges() == 1
-    assert all(data.get("route") != "ferry" for _, _, _, data in graph.edges(keys=True, data=True))
+    assert all(
+        data.get("route") != "ferry"
+        for _, _, _, data in graph.edges(keys=True, data=True)
+    )

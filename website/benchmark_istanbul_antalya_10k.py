@@ -40,20 +40,25 @@ try:
     from rich.panel import Panel
     from rich.table import Table
 except ImportError as exc:  # pragma: no cover - runtime dependency guard
-    raise SystemExit("Missing dependency: rich. Install with `pip install rich tqdm`.") from exc
+    raise SystemExit(
+        "Missing dependency: rich. Install with `pip install rich tqdm`."
+    ) from exc
 
 try:
     from tqdm import tqdm
 except ImportError as exc:  # pragma: no cover - runtime dependency guard
-    raise SystemExit("Missing dependency: tqdm. Install with `pip install rich tqdm`.") from exc
+    raise SystemExit(
+        "Missing dependency: tqdm. Install with `pip install rich tqdm`."
+    ) from exc
 
 # Allow importing from project root when executed from website/ directory.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from motomap import GOOGLE_MAPS_API_KEY
+from motomap.algorithm import add_travel_time_to_graph, ucret_opsiyonlu_rota_hesapla
 from motomap.data_cleaner import clean_graph
 from motomap.osm_validator import filter_motorcycle_edges
-from motomap.router import NoRouteFoundError, add_travel_time_to_graph, ucret_opsiyonlu_rota_hesapla
+from motomap.router import NoRouteFoundError
 
 DEFAULT_COUNT = 10_000
 DEFAULT_SEED = 42
@@ -104,7 +109,9 @@ MAJOR_ROAD_FILTER = (
 FERRY_ROUTE_FILTER = '["route"="ferry"]'
 
 GOOGLE_DIRECTIONS_URL = "https://maps.googleapis.com/maps/api/directions/json"
-CPP_SAMPLER_SOURCE = Path(__file__).resolve().parents[1] / "embeddings" / "od_sampler.cpp"
+CPP_SAMPLER_SOURCE = (
+    Path(__file__).resolve().parents[1] / "embeddings" / "od_sampler.cpp"
+)
 CPP_SAMPLER_EXE = Path(__file__).resolve().parents[1] / "embeddings" / "od_sampler.exe"
 
 
@@ -164,7 +171,9 @@ class QPSLimiter:
         self._next_allowed = time.monotonic() + self._min_interval_s
 
 
-class RichHelpFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawTextHelpFormatter):
+class RichHelpFormatter(
+    argparse.ArgumentDefaultsHelpFormatter, argparse.RawTextHelpFormatter
+):
     """Keep defaults and multiline help examples."""
 
 
@@ -180,8 +189,15 @@ def parse_args() -> argparse.Namespace:
         ),
     )
 
-    parser.add_argument("--count", type=int, default=DEFAULT_COUNT, help="Number of O-D pairs.")
-    parser.add_argument("--seed", type=int, default=DEFAULT_SEED, help="Random seed for pair generation.")
+    parser.add_argument(
+        "--count", type=int, default=DEFAULT_COUNT, help="Number of O-D pairs."
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=DEFAULT_SEED,
+        help="Random seed for pair generation.",
+    )
 
     parser.add_argument(
         "--pairs-json",
@@ -216,16 +232,25 @@ def parse_args() -> argparse.Namespace:
         default="ucretli_serbest",
         help="MotoMap toll preference.",
     )
-    parser.add_argument("--motor-cc", type=float, help="MotoMap motorcycle displacement.")
+    parser.add_argument(
+        "--motor-cc", type=float, help="MotoMap motorcycle displacement."
+    )
 
-    parser.add_argument("--google-qps", type=float, default=DEFAULT_GOOGLE_QPS, help="Google request rate limit.")
+    parser.add_argument(
+        "--google-qps",
+        type=float,
+        default=DEFAULT_GOOGLE_QPS,
+        help="Google request rate limit.",
+    )
     parser.add_argument(
         "--valhalla-qps",
         type=float,
         default=DEFAULT_VALHALLA_QPS,
         help="Valhalla request rate limit.",
     )
-    parser.add_argument("--valhalla-url", default=DEFAULT_VALHALLA_URL, help="Valhalla base URL.")
+    parser.add_argument(
+        "--valhalla-url", default=DEFAULT_VALHALLA_URL, help="Valhalla base URL."
+    )
 
     parser.add_argument(
         "--min-crow-m",
@@ -240,9 +265,15 @@ def parse_args() -> argparse.Namespace:
         help="Maximum crow-fly distance for O-D filtering.",
     )
 
-    parser.add_argument("--disable-google", action="store_true", help="Disable Google backend.")
-    parser.add_argument("--disable-valhalla", action="store_true", help="Disable Valhalla backend.")
-    parser.add_argument("--disable-motomap", action="store_true", help="Disable MotoMap backend.")
+    parser.add_argument(
+        "--disable-google", action="store_true", help="Disable Google backend."
+    )
+    parser.add_argument(
+        "--disable-valhalla", action="store_true", help="Disable Valhalla backend."
+    )
+    parser.add_argument(
+        "--disable-motomap", action="store_true", help="Disable MotoMap backend."
+    )
     parser.add_argument(
         "--disable-cpp-sampler",
         action="store_true",
@@ -253,7 +284,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Force C++ O-D sampler even when auto mode would prefer Python.",
     )
-    parser.add_argument("--dry-run", action="store_true", help="Prepare graph/pairs/resume state; skip API calls.")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Prepare graph/pairs/resume state; skip API calls.",
+    )
 
     args = parser.parse_args()
     if args.count <= 0:
@@ -269,7 +304,9 @@ def parse_args() -> argparse.Namespace:
     if args.disable_google and args.disable_valhalla and args.disable_motomap:
         raise SystemExit("At least one backend must remain enabled.")
     if args.disable_cpp_sampler and args.force_cpp_sampler:
-        raise SystemExit("--disable-cpp-sampler and --force-cpp-sampler cannot be used together.")
+        raise SystemExit(
+            "--disable-cpp-sampler and --force-cpp-sampler cannot be used together."
+        )
     return args
 
 
@@ -297,7 +334,9 @@ def haversine_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     return 2 * radius_m * math.asin(math.sqrt(a))
 
 
-def ratio(numerator: float | int | None, denominator: float | int | None) -> float | None:
+def ratio(
+    numerator: float | int | None, denominator: float | int | None
+) -> float | None:
     if numerator is None or denominator is None:
         return None
     denom = float(denominator)
@@ -374,13 +413,17 @@ def prepare_corridor_graph(graph: nx.MultiDiGraph) -> nx.MultiDiGraph:
     return graph
 
 
-def load_or_build_corridor_graph(graph_cache: Path, console: Console) -> nx.MultiDiGraph:
+def load_or_build_corridor_graph(
+    graph_cache: Path, console: Console
+) -> nx.MultiDiGraph:
     if graph_cache.exists():
         console.print(f"[cyan]Loading graph cache:[/cyan] {graph_cache}")
         graph = ox.load_graphml(graph_cache)
         if str(graph.graph.get("motomap_corridor_prepared", "")) == "1":
             return graph
-        console.print("[yellow]Cached graph found but not prepared; running prepare pipeline.[/yellow]")
+        console.print(
+            "[yellow]Cached graph found but not prepared; running prepare pipeline.[/yellow]"
+        )
         graph = prepare_corridor_graph(graph)
         ox.save_graphml(graph, graph_cache)
         return graph
@@ -389,7 +432,9 @@ def load_or_build_corridor_graph(graph_cache: Path, console: Console) -> nx.Mult
     graph = None
     chunk_graphs: list[nx.MultiDiGraph] = []
     boxes = corridor_chunk_bboxes()
-    console.print(f"[cyan]Building corridor graph from {len(boxes)} chunked bbox queries...[/cyan]")
+    console.print(
+        f"[cyan]Building corridor graph from {len(boxes)} chunked bbox queries...[/cyan]"
+    )
 
     for idx, (north, south, east, west) in enumerate(boxes, start=1):
         try:
@@ -434,9 +479,11 @@ def load_or_build_corridor_graph(graph_cache: Path, console: Console) -> nx.Mult
     console.print(f"[green]Saved graph cache:[/green] {graph_cache}")
     return graph
 
+
 def _node_inside_region(lat: float, lng: float, region: dict[str, float]) -> bool:
     return (
-        region["south"] <= lat <= region["north"] and region["west"] <= lng <= region["east"]
+        region["south"] <= lat <= region["north"]
+        and region["west"] <= lng <= region["east"]
     )
 
 
@@ -509,8 +556,12 @@ def ensure_cpp_sampler(console: Console) -> bool:
         return False
 
     if completed.returncode != 0:
-        console.print("[yellow]C++ sampler compile error, using Python fallback.[/yellow]")
-        diagnostics = (completed.stderr or "").strip() or (completed.stdout or "").strip()
+        console.print(
+            "[yellow]C++ sampler compile error, using Python fallback.[/yellow]"
+        )
+        diagnostics = (completed.stderr or "").strip() or (
+            completed.stdout or ""
+        ).strip()
         if diagnostics:
             console.print(diagnostics)
         else:
@@ -583,7 +634,9 @@ def sample_pairs_cpp(
             return None
 
         if completed.returncode != 0 or not out_path.exists():
-            console.print("[yellow]C++ sampler returned error, using Python sampler.[/yellow]")
+            console.print(
+                "[yellow]C++ sampler returned error, using Python sampler.[/yellow]"
+            )
             if completed.stderr:
                 console.print(completed.stderr.strip())
             return None
@@ -709,7 +762,12 @@ def load_pairs_json(path: Path) -> list[ODPair]:
         destination = parse_point(
             row.get("destination", {}), key_prefix=f"pairs[{idx}].destination"
         )
-        crow_m = float(row.get("crow_m", haversine_m(origin.lat, origin.lng, destination.lat, destination.lng)))
+        crow_m = float(
+            row.get(
+                "crow_m",
+                haversine_m(origin.lat, origin.lng, destination.lat, destination.lng),
+            )
+        )
         pairs.append(
             ODPair(
                 case_id=case_id,
@@ -793,7 +851,9 @@ def load_or_generate_pairs(
     if pairs_json.exists():
         console.print(f"[cyan]Loading pairs:[/cyan] {pairs_json}")
         loaded = load_pairs_json(pairs_json)
-        loaded, dropped = filter_pairs_by_crow(loaded, min_crow_m=min_crow_m, max_crow_m=max_crow_m)
+        loaded, dropped = filter_pairs_by_crow(
+            loaded, min_crow_m=min_crow_m, max_crow_m=max_crow_m
+        )
         if dropped:
             console.print(
                 f"[yellow]Dropped {dropped} pair(s) outside crow distance filter; regenerating as needed.[/yellow]"
@@ -821,13 +881,17 @@ def load_or_generate_pairs(
     console.print(f"[cyan]Generating new pairs:[/cyan] {pairs_json}")
     pairs = None
     skip_cpp_reason = ""
-    should_try_cpp = use_cpp_sampler and (force_cpp_sampler or count >= CPP_SAMPLER_AUTO_MIN_COUNT)
+    should_try_cpp = use_cpp_sampler and (
+        force_cpp_sampler or count >= CPP_SAMPLER_AUTO_MIN_COUNT
+    )
     if use_cpp_sampler and not force_cpp_sampler and count < CPP_SAMPLER_AUTO_MIN_COUNT:
         skip_cpp_reason = "batch size below auto C++ threshold"
 
     if should_try_cpp and not force_cpp_sampler:
         # Measure quickly on a small sample and pick the faster sampler on this machine.
-        calibration_count = min(CPP_SAMPLER_CALIBRATION_MAX, max(CPP_SAMPLER_CALIBRATION_MIN, count // 100))
+        calibration_count = min(
+            CPP_SAMPLER_CALIBRATION_MAX, max(CPP_SAMPLER_CALIBRATION_MIN, count // 100)
+        )
         calibration_count = min(calibration_count, count)
         py_time_s = None
         cpp_time_s = None
@@ -947,6 +1011,7 @@ def make_backend_result(
         "error": error,
     }
 
+
 def fetch_google_directions(
     session: requests.Session,
     limiter: QPSLimiter,
@@ -989,7 +1054,9 @@ def fetch_google_directions(
             continue
 
         if response.status_code >= 400:
-            return make_backend_result(enabled=True, success=False, status=f"HTTP_{response.status_code}")
+            return make_backend_result(
+                enabled=True, success=False, status=f"HTTP_{response.status_code}"
+            )
 
         try:
             data = response.json()
@@ -1008,10 +1075,14 @@ def fetch_google_directions(
         if status == "OK":
             routes = data.get("routes") or []
             if not routes:
-                return make_backend_result(enabled=True, success=False, status="EMPTY_ROUTES")
+                return make_backend_result(
+                    enabled=True, success=False, status="EMPTY_ROUTES"
+                )
             legs = routes[0].get("legs") or []
             if not legs:
-                return make_backend_result(enabled=True, success=False, status="EMPTY_LEGS")
+                return make_backend_result(
+                    enabled=True, success=False, status="EMPTY_LEGS"
+                )
             leg = legs[0]
             try:
                 distance_m = float((leg.get("distance") or {}).get("value"))
@@ -1036,7 +1107,9 @@ def fetch_google_directions(
 
         return make_backend_result(enabled=True, success=False, status=status)
 
-    return make_backend_result(enabled=True, success=False, status="MAX_RETRIES_EXCEEDED")
+    return make_backend_result(
+        enabled=True, success=False, status="MAX_RETRIES_EXCEEDED"
+    )
 
 
 def fetch_valhalla_route(
@@ -1074,11 +1147,15 @@ def fetch_valhalla_route(
 
         if response.status_code == 429 or 500 <= response.status_code < 600:
             if attempt == max_retries - 1:
-                return make_backend_result(enabled=True, success=False, status=f"HTTP_{response.status_code}")
+                return make_backend_result(
+                    enabled=True, success=False, status=f"HTTP_{response.status_code}"
+                )
             time.sleep(min(10.0, 1.0 * (attempt + 1)))
             continue
         if response.status_code >= 400:
-            return make_backend_result(enabled=True, success=False, status=f"HTTP_{response.status_code}")
+            return make_backend_result(
+                enabled=True, success=False, status=f"HTTP_{response.status_code}"
+            )
 
         try:
             data = response.json()
@@ -1114,7 +1191,9 @@ def fetch_valhalla_route(
             distance_m = float(length_km) * 1000.0
             eta_s = float(duration_s)
         except (TypeError, ValueError):
-            return make_backend_result(enabled=True, success=False, status="MISSING_SUMMARY")
+            return make_backend_result(
+                enabled=True, success=False, status="MISSING_SUMMARY"
+            )
         return make_backend_result(
             enabled=True,
             success=True,
@@ -1123,7 +1202,9 @@ def fetch_valhalla_route(
             duration_s=eta_s,
         )
 
-    return make_backend_result(enabled=True, success=False, status="MAX_RETRIES_EXCEEDED")
+    return make_backend_result(
+        enabled=True, success=False, status="MAX_RETRIES_EXCEEDED"
+    )
 
 
 def run_motomap_route(
@@ -1139,7 +1220,9 @@ def run_motomap_route(
         if origin_node is None:
             origin_node = ox.nearest_nodes(graph, pair.origin.lng, pair.origin.lat)
         if destination_node is None:
-            destination_node = ox.nearest_nodes(graph, pair.destination.lng, pair.destination.lat)
+            destination_node = ox.nearest_nodes(
+                graph, pair.destination.lng, pair.destination.lat
+            )
         if origin_node == destination_node:
             return make_backend_result(
                 enabled=True,
@@ -1164,9 +1247,13 @@ def run_motomap_route(
             duration_s=float(selected.get("toplam_sure_s")),
         )
     except NoRouteFoundError as exc:
-        return make_backend_result(enabled=True, success=False, status="NO_ROUTE", error=str(exc))
+        return make_backend_result(
+            enabled=True, success=False, status="NO_ROUTE", error=str(exc)
+        )
     except Exception as exc:  # pragma: no cover - defensive runtime reporting
-        return make_backend_result(enabled=True, success=False, status="MOTOMAP_ERROR", error=str(exc))
+        return make_backend_result(
+            enabled=True, success=False, status="MOTOMAP_ERROR", error=str(exc)
+        )
 
 
 def evaluate_case(
@@ -1186,8 +1273,12 @@ def evaluate_case(
     motor_cc: float | None,
 ) -> dict[str, Any]:
     google_result = make_backend_result(enabled=False, success=False, status="DISABLED")
-    valhalla_result = make_backend_result(enabled=False, success=False, status="DISABLED")
-    motomap_result = make_backend_result(enabled=False, success=False, status="DISABLED")
+    valhalla_result = make_backend_result(
+        enabled=False, success=False, status="DISABLED"
+    )
+    motomap_result = make_backend_result(
+        enabled=False, success=False, status="DISABLED"
+    )
 
     if enable_google:
         if not google_api_key:
@@ -1282,6 +1373,7 @@ def append_jsonl(path: Path, row: dict[str, Any]) -> None:
     with path.open("a", encoding="utf-8") as file:
         file.write(json.dumps(row, ensure_ascii=False) + "\n")
 
+
 def percentile(values: list[float], pct: float) -> float | None:
     if not values:
         return None
@@ -1297,7 +1389,9 @@ def percentile(values: list[float], pct: float) -> float | None:
     return ordered[lower] * (1.0 - weight) + ordered[upper] * weight
 
 
-def summarize_comparator(results: list[dict[str, Any]], comparator_key: str) -> dict[str, Any]:
+def summarize_comparator(
+    results: list[dict[str, Any]], comparator_key: str
+) -> dict[str, Any]:
     ratio_dist_values: list[float] = []
     ratio_time_values: list[float] = []
     ape_dist_values: list[float] = []
@@ -1346,7 +1440,9 @@ def summarize_comparator(results: list[dict[str, Any]], comparator_key: str) -> 
     }
 
 
-def summarize_backend_counts(results: list[dict[str, Any]], backend_key: str) -> dict[str, int | float | None]:
+def summarize_backend_counts(
+    results: list[dict[str, Any]], backend_key: str
+) -> dict[str, int | float | None]:
     enabled = 0
     success = 0
     failure = 0
@@ -1422,7 +1518,9 @@ def print_runtime_summary(summary: dict[str, Any], console: Console) -> None:
         time_ratio = stat["duration_ratio"]
         dist_ape = stat["distance_ape_pct"]
         time_ape = stat["duration_ape_pct"]
-        sample_count = dist_ratio["count"] if dist_ratio["count"] else time_ratio["count"]
+        sample_count = (
+            dist_ratio["count"] if dist_ratio["count"] else time_ratio["count"]
+        )
         ratio_table.add_row(
             label,
             format_value(dist_ratio["mean"]),
@@ -1475,7 +1573,9 @@ def build_summary(
             "count": len(pairs),
             "min_crow_m": min(pair.crow_m for pair in pairs) if pairs else None,
             "max_crow_m": max(pair.crow_m for pair in pairs) if pairs else None,
-            "avg_crow_m": (sum(pair.crow_m for pair in pairs) / len(pairs)) if pairs else None,
+            "avg_crow_m": (
+                (sum(pair.crow_m for pair in pairs) / len(pairs)) if pairs else None
+            ),
         },
         "resume": {
             "pending_count": pending_count,
@@ -1489,7 +1589,9 @@ def build_summary(
         },
         "comparison_stats": {
             "motomap_vs_google": summarize_comparator(all_results, "motomap_vs_google"),
-            "valhalla_vs_google": summarize_comparator(all_results, "valhalla_vs_google"),
+            "valhalla_vs_google": summarize_comparator(
+                all_results, "valhalla_vs_google"
+            ),
         },
         "results_count": len(all_results),
     }
@@ -1552,7 +1654,9 @@ def main() -> None:
         if case_id in target_case_ids
     }
 
-    pending_pairs = [pair for pair in pairs if pair.case_id not in existing_results_by_case]
+    pending_pairs = [
+        pair for pair in pairs if pair.case_id not in existing_results_by_case
+    ]
     resumed_count = len(existing_results_by_case)
     console.print(
         f"[cyan]Resume state:[/cyan] existing={resumed_count}, pending={len(pending_pairs)}, "

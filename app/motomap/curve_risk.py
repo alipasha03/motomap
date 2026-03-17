@@ -139,9 +139,7 @@ def analyze_linestring_curvature(
     avg_angle_deg = float(np.mean(angles_deg)) if angle_count else 0.0
 
     local_step_m = safe_length / max(1, samples - 1)
-    hairpin_count = (
-        danger_count if local_step_m <= hairpin_distance_threshold_m else 0
-    )
+    hairpin_count = danger_count if local_step_m <= hairpin_distance_threshold_m else 0
 
     curvature_score = float(fun_count) / (1.0 + float(danger_count))
     danger_score = float(danger_count) / (1.0 + float(angle_count))
@@ -172,9 +170,7 @@ def add_curve_and_risk_metrics(
             interpolation_step_m=interpolation_step_m,
         )
 
-        high_risk = (
-            metrics["hairpin_count"] > 0 and grade < RISKY_DOWNHILL_THRESHOLD
-        )
+        high_risk = metrics["hairpin_count"] > 0 and grade < RISKY_DOWNHILL_THRESHOLD
         data["viraj_aci_ortalama_deg"] = metrics["avg_angle_deg"]
         data["viraj_fun_sayisi"] = metrics["fun_count"]
         data["viraj_tehlike_sayisi"] = metrics["danger_count"]

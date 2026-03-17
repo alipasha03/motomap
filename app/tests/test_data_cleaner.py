@@ -8,21 +8,26 @@ def _make_test_graph():
     G = nx.MultiDiGraph()
 
     # Node 1 -> Node 2: motorway with all attrs present
-    G.add_edge(1, 2, 0,
-               highway="motorway", lanes="6", maxspeed="120",
-               surface="asphalt", oneway=True, length=1000.0)
+    G.add_edge(
+        1,
+        2,
+        0,
+        highway="motorway",
+        lanes="6",
+        maxspeed="120",
+        surface="asphalt",
+        oneway=True,
+        length=1000.0,
+    )
 
     # Node 2 -> Node 3: primary road missing lanes, maxspeed, surface
-    G.add_edge(2, 3, 0,
-               highway="primary", oneway=False, length=500.0)
+    G.add_edge(2, 3, 0, highway="primary", oneway=False, length=500.0)
 
     # Node 3 -> Node 4: residential missing everything
-    G.add_edge(3, 4, 0,
-               highway="residential", length=200.0)
+    G.add_edge(3, 4, 0, highway="residential", length=200.0)
 
     # Node 4 -> Node 5: secondary, oneway, missing lanes
-    G.add_edge(4, 5, 0,
-               highway="secondary", oneway=True, length=300.0)
+    G.add_edge(4, 5, 0, highway="secondary", oneway=True, length=300.0)
 
     return G
 
@@ -80,6 +85,7 @@ class TestCleanGraph:
     def test_secondary_oneway_lanes_forward(self, cleaned):
         data = cleaned.edges[4, 5, 0]
         assert data["lanes_forward"] == 2  # oneway=True, 2 lanes
+
 
 def test_list_highway_gets_correct_defaults():
     """When highway is a list, first element is used for default lookups."""
